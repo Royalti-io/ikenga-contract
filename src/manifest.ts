@@ -1,108 +1,185 @@
+// Ikenga pkg manifest schema — mirrors the Rust schema in
+// `royalti-io/ikenga` at `src-tauri/src/pkg/manifest.rs`.
+//
+// Source of truth is the Rust struct. This zod schema is used by the CLI,
+// registry, and tooling for client-side parse + validation. Field changes
+// MUST be made in lockstep with the Rust struct, and IKENGA_API_VERSION
+// must be bumped if semantics change in a non-additive way.
+//
+// On disk: `<pkg-root>/manifest.json` (JSON, not TOML).
+
 import { z } from 'zod';
 
-// ---------- Pkg type ----------
+export const IKENGA_API_VERSION = 1 as const;
+export const IKENGA_API_MIN_SUPPORTED = 1 as const;
 
-export const PkgTypeSchema = z.enum(['ui', 'mcp', 'cli', 'engine']);
-export type PkgType = z.infer<typeof PkgTypeSchema>;
-
-// ---------- Isolation policy (UI pkgs only) ----------
-//
-// Pkgs *request* an isolation; the kernel decides at install time based on
-// publisher trust + pkg type. First-party signed pkgs may be granted
-// "mounted" for performance; everyone else is "iframe".
-
-export const IsolationSchema = z.enum(['iframe', 'mounted']);
-export type Isolation = z.infer<typeof IsolationSchema>;
-
-// ---------- Update channel ----------
-
-export const UpdateChannelSchema = z.enum(['stable', 'beta', 'dev']);
-export type UpdateChannel = z.infer<typeof UpdateChannelSchema>;
-
-// ---------- Author / publisher ----------
+// ---------- Sub-schemas ----------
 
 export const AuthorSchema = z.object({
   name: z.string(),
-  key: z.string().regex(/^[a-z0-9-]+$/),
-  url: z.string().url().optional(),
+  key: z.string().optional(),
 });
 
-// ---------- Sidecar binary spec ----------
-
-export const SidecarSchema = z.object({
-  name: z.string().regex(/^[a-z][a-z0-9-]*$/),
-  path: z.string(),
-  platforms: z.array(z.enum(['darwin-x64', 'darwin-arm64', 'linux-x64', 'linux-arm64', 'win32-x64'])).optional(),
-});
-export type Sidecar = z.infer<typeof SidecarSchema>;
-
-// ---------- MCP server spec ----------
-
-export const PkgMcpServerSchema = z.object({
-  id: z.string().regex(/^[a-z][a-z0-9-]*$/),
+export const McpServerSchema = z.object({
+  name: z.string(),
   command: z.string(),
   args: z.array(z.string()).default([]),
   env: z.record(z.string()).default({}),
+  /** "per-call" (default) | "long-lived" */
+  lifecycle: z.enum(['per-call', 'long-lived']).optional(),
 });
-export type PkgMcpServer = z.infer<typeof PkgMcpServerSchema>;
+export type McpServer = z.infer<typeof McpServerSchema>;
+
+export const SidecarSpecSchema = z.object({
+  /** Must start with `pa-<pkg-slug>-` (slug = id with `.` → `-`). */
+  name: z.string(),
+  /** Path inside pkg dir; may contain `{target}` (host triple). */
+  bin: z.string(),
+  /** "json" (default) | "raw" */
+  stdio: z.string().default('json'),
+});
+export type SidecarSpec = z.infer<typeof SidecarSpecSchema>;
+
+export const PermissionsSchema = z.object({
+  'shell.execute': z.array(z.string()).default([]),
+  'fs.read': z.array(z.string()).default([]),
+  'fs.write': z.array(z.string()).default([]),
+  net: z.array(z.string()).default([]),
+  'supabase.tables': z.array(z.string()).default([]),
+  'vault.keys': z.array(z.string()).default([]),
+}).default({});
+
+export const NavEntrySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string().optional(),
+  section: z.string().optional(),
+  route: z.string(),
+});
+
+export const UiRouteSchema = z.object({
+  path: z.string(),
+  /** "iframe" | "component" (component is builtin-only) */
+  kind: z.enum(['iframe', 'component']),
+  /** iframe: URL or pkg-relative html path. component: identifier. */
+  source: z.string(),
+});
+
+export const CommandPaletteEntrySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  shortcut: z.string().optional(),
+  action: z.unknown(),
+});
+
+export const SidePaneViewerSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  route: z.string(),
+});
+
+export const UiBlockSchema = z.object({
+  nav: z.array(NavEntrySchema).default([]),
+  routes: z.array(UiRouteSchema).default([]),
+  command_palette: z.array(CommandPaletteEntrySchema).default([]),
+  side_pane_viewers: z.array(SidePaneViewerSchema).default([]),
+  /** Per-directive CSP overrides for the iframe content. */
+  csp: z.record(z.array(z.string())).optional(),
+  /** Per-directive Permission-Policy values. */
+  permissions: z.record(z.array(z.string())).optional(),
+}).default({});
+
+export const SettingsFieldSchema = z.object({
+  key: z.string(),
+  type: z.enum(['string', 'number', 'boolean', 'secret']),
+  label: z.string(),
+  default: z.unknown().optional(),
+  description: z.string().optional(),
+});
+export const SettingsBlockSchema = z.object({
+  schema: z.array(SettingsFieldSchema).default([]),
+});
+
+export const IykeRouteSchema = z.object({
+  method: z.enum(['GET', 'POST']),
+  /** Must start with `/pkg/<id>/`. */
+  path: z.string(),
+  /** `sidecar:<name> <sub>` | `event:<name>` */
+  handler: z.string(),
+});
+export const IykeBlockSchema = z.object({
+  routes: z.array(IykeRouteSchema).default([]),
+  events: z.array(z.string()).default([]),
+});
+
+export const CronEntrySchema = z.object({
+  id: z.string(),
+  /** 6-field cron expression: sec min hour day month dow */
+  expr: z.string(),
+  handler: z.string(),
+  env_from_settings: z.array(z.string()).default([]),
+});
+
+export const WindowBlockSchema = z.object({
+  label: z.string(),
+  url: z.string(),
+  size: z.tuple([z.number(), z.number()]).optional(),
+  decorations: z.boolean().optional(),
+  menu: z.string().optional(),
+});
+
+export const QueriesBlockSchema = z.object({
+  key_prefixes: z.array(z.string()).default([]),
+});
 
 // ---------- Manifest ----------
 
 export const ManifestSchema = z.object({
-  // Identity
-  id: z.string().regex(/^[a-z][a-z0-9-]*$/, 'lowercase alphanum with dashes'),
-  version: z.string().regex(/^\d+\.\d+\.\d+(-[\w.]+)?$/, 'semver'),
-  type: PkgTypeSchema,
+  /** Reverse-DNS, e.g. `com.ikenga.studio`. */
+  id: z.string().regex(/^[a-z0-9]+(\.[a-z0-9-]+)+$/, 'must be reverse-DNS'),
+  name: z.string(),
+  version: z.string(),
+  /** Numeric string — host accepts versions in [MIN, CURRENT]. */
+  ikenga_api: z.string().regex(/^\d+$/),
+
+  /** Hint, not enforced: "skill" | "embedded" | "windowed" | "engine". */
+  kind: z.string().optional(),
   author: AuthorSchema.optional(),
+  /** Rust target triples; empty = host-agnostic. */
+  targets: z.array(z.string()).default([]),
 
-  // Compatibility
-  shell_min: z.string().regex(/^\d+\.\d+\.\d+$/),
-  contract: z.string().default('^1'),
-
-  // UI surface (UI pkgs only)
-  isolation: IsolationSchema.optional(),
-  entry: z.string().optional(),
-  display_name: z.string().optional(),
-  icon: z.string().optional(),
-
-  // Engine adapter (engine pkgs only)
-  engine_module: z.string().optional(),
-
-  // Capabilities + integrations
-  scopes: z.array(z.string()).default([]),
-  sidecars: z.array(SidecarSchema).default([]),
-  mcp_servers: z.array(z.union([z.string(), PkgMcpServerSchema])).default([]),
-
-  // Distribution
-  update_channel: UpdateChannelSchema.default('stable'),
-  sources: z.array(z.string()).default([]),
-
-  // Optional pkg-private migrations dir (run on install/update)
+  // Capability blocks (all optional — kernel walks present blocks)
+  skills: z.string().optional(),
+  commands: z.string().optional(),
+  agents: z.string().optional(),
+  mcp: z.array(McpServerSchema).default([]),
+  sidecars: z.array(SidecarSpecSchema).default([]),
+  permissions: PermissionsSchema,
   migrations: z.string().optional(),
-})
-  .refine(
-    (m) => m.type !== 'ui' || !!m.entry,
-    { message: 'UI pkgs must declare an "entry"', path: ['entry'] }
-  )
-  .refine(
-    (m) => m.type !== 'engine' || !!m.engine_module,
-    { message: 'Engine pkgs must declare an "engine_module"', path: ['engine_module'] }
-  )
-  .refine(
-    (m) => m.type !== 'mcp' || m.mcp_servers.length > 0,
-    { message: 'MCP pkgs must declare at least one "mcp_servers" entry', path: ['mcp_servers'] }
-  );
+  settings: SettingsBlockSchema.optional(),
+  ui: UiBlockSchema,
+  iyke: IykeBlockSchema.optional(),
+  cron: z.array(CronEntrySchema).default([]),
+  window: WindowBlockSchema.optional(),
+  queries: QueriesBlockSchema.optional(),
+});
 
 export type Manifest = z.infer<typeof ManifestSchema>;
 
-// ---------- Lock entry (kernel-side per-install record) ----------
+// ---------- Helpers ----------
 
-export const InstalledPkgSchema = z.object({
-  manifest: ManifestSchema,
-  installed_at: z.string().datetime(),
-  source: z.string(),
-  signature: z.string().optional(),
-  pinned_version: z.string().optional(),
-  resolved_isolation: IsolationSchema.optional(),
-});
-export type InstalledPkg = z.infer<typeof InstalledPkgSchema>;
+/** Convert a reverse-DNS id to a slug: `com.ikenga.studio` → `com-ikenga-studio`. */
+export function pkgSlug(id: string): string {
+  return id.replaceAll('.', '-');
+}
+
+/** Sidecar names must start with `pa-<pkg-slug>-`. */
+export function expectedSidecarPrefix(id: string): string {
+  return `pa-${pkgSlug(id)}-`;
+}
+
+export function isCompatible(api: string): boolean {
+  const n = Number.parseInt(api, 10);
+  if (Number.isNaN(n)) return false;
+  return n >= IKENGA_API_MIN_SUPPORTED && n <= IKENGA_API_VERSION;
+}

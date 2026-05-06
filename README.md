@@ -17,6 +17,12 @@ This package is intentionally small and stable. Bumping its major version is an 
 
 Strict semver. Pkgs declare `"contract": "^1"` and the kernel checks compatibility at install time.
 
+## Source of truth
+
+The `Manifest` schema **mirrors** the Rust struct in `royalti-io/ikenga` at `src-tauri/src/pkg/manifest.rs`. The Rust kernel parses pkg `manifest.json` files; this package is a TS-side validator and types-only mirror for tooling (CLI, registry build).
+
+If you need to change the manifest, change the Rust struct first and update this schema in lockstep.
+
 ## Status
 
-`v0.1.0` — first real schemas. RPC method catalogue, engine interface, and capability scopes all defined; expect minor additions before `1.0.0`. The shell + Studio carve will validate this surface before `1.0`.
+`v0.2.0` — manifest realigned to the real Rust schema (was a speculative parallel in v0.1.0). RPC method catalogue, engine interface, and capability scopes still in place but unused by the kernel today; treat them as forward-looking.
