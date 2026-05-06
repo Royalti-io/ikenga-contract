@@ -19,4 +19,4 @@ Strict semver. Pkgs declare `"contract": "^1"` and the kernel checks compatibili
 
 ## Status
 
-`v0.0.0` — scaffold only. Schemas land as the kernel catches up to spec.
+`v0.1.0` — first real schemas. RPC method catalogue, engine interface, and capability scopes all defined; expect minor additions before `1.0.0`. The shell + Studio carve will validate this surface before `1.0`.
