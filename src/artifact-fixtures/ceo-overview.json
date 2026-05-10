@@ -1,0 +1,56 @@
+{
+  "format": "ikenga-artifact",
+  "formatVersion": "0.1",
+  "id": "ceo-overview",
+  "name": "CEO Overview",
+  "version": "0.1.0",
+  "description": "Daily exec digest: KPIs, agent activity, notifications, recent docs, calendar, team signals.",
+  "license": "BUSL-1.1",
+  "icon": { "lucide": "compass" },
+  "dataSources": {
+    "kpis": {
+      "type": "supabase",
+      "table": "v_exec_kpis",
+      "select": "*",
+      "refresh": { "mode": "interval", "every": "1h" }
+    },
+    "agent_runs": {
+      "type": "mcp",
+      "server": "mempalace",
+      "tool": "mempalace_diary_read",
+      "args": { "limit": 8 },
+      "refresh": { "mode": "interval", "every": "5m" }
+    },
+    "notifications": {
+      "type": "sql",
+      "db": "ikenga.local",
+      "query": "select * from notifications where read = 0 order by ts desc limit 6",
+      "refresh": { "mode": "manual" }
+    },
+    "recent_docs": {
+      "type": "file",
+      "path": "./data/recent_docs.json",
+      "refresh": { "mode": "watch" }
+    },
+    "calendar": {
+      "type": "mcp",
+      "server": "google-calendar",
+      "tool": "list_events",
+      "args": { "horizon_hours": 48 },
+      "refresh": { "mode": "interval", "every": "15m" }
+    },
+    "team_signals": {
+      "type": "fetch",
+      "url": "https://api.royalti.io/internal/mattermost/digest",
+      "refresh": { "mode": "interval", "every": "30m" }
+    }
+  },
+  "fallback": {
+    "mode": "mock",
+    "dataTag": "ikenga-mock-data",
+    "banner": "Showing mock data — live host (Ikenga shell) not connected."
+  },
+  "pin": { "suggested": true, "section": "leadership", "label": "CEO Overview" },
+  "notes": { "enabled": true },
+  "requires": { "ikenga": ">=0.4", "bridge": "^1.0" }
+}

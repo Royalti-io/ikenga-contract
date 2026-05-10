@@ -1,0 +1,25 @@
+{
+  "format": "ikenga-artifact",
+  "formatVersion": "0.1",
+  "id": "hello-world",
+  "name": "Hello, Artifact",
+  "version": "0.1.0",
+  "description": "Smallest valid Ikenga artifact. Lists users from a public API; falls back to mock when offline.",
+  "license": "BUSL-1.1",
+  "icon": { "lucide": "sparkles" },
+  "dataSources": {
+    "users": {
+      "type": "fetch",
+      "url": "https://jsonplaceholder.typicode.com/users",
+      "refresh": { "mode": "manual" }
+    }
+  },
+  "fallback": {
+    "mode": "mock",
+    "dataTag": "ikenga-mock-data",
+    "banner": "Showing mock data — live source unreachable."
+  },
+  "pin": { "suggested": false },
+  "notes": { "enabled": true },
+  "requires": { "ikenga": ">=0.4", "bridge": "^1.0" }
+}

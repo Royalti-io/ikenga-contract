@@ -12,6 +12,16 @@ This package is intentionally small and stable. Bumping its major version is an 
 | `@ikenga/contract/rpc` | Shell ↔ pkg postMessage RPC envelope, request/response types |
 | `@ikenga/contract/engine` | `Engine` interface, `Session`, `EngineEvent` types |
 | `@ikenga/contract/scopes` | Capability scope catalogue (`tasks:read`, `engine:invoke`, …) |
+| `@ikenga/contract/artifact` | Ikenga artifact manifest schema (zod) — `ArtifactManifestSchema`, `ArtifactManifest` type, refresh / data-source / fallback sub-schemas |
+
+## Artifact manifest
+
+The artifact manifest is the JSON block embedded in `<script type="application/json" id="ikenga-manifest">…</script>` (single-file artifacts) or in `manifest.json` (folder mode). It's a separate concept from the pkg manifest — pkgs are heavyweight Tauri-side mini-apps; artifacts are portable HTML docs that render anywhere and light up with live data inside the Ikenga shell.
+
+- Source of truth: `src/artifact.ts` (Zod).
+- Generated JSON Schema: `schemas/artifact/v0.json` — regenerate with `pnpm generate:schemas` after schema edits.
+- Published at: `https://royalti-io.github.io/ikenga-contract/schemas/artifact/v0.json` (`$id` is stamped at generation time).
+- Fixtures (the three v0 example artifacts) live in `src/artifact-fixtures/` and are gated by `pnpm test`.
 
 ## Versioning
 
