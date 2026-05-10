@@ -1,0 +1,42 @@
+{
+  "format": "ikenga-artifact",
+  "formatVersion": "0.1",
+  "id": "cfo-daily",
+  "name": "CFO Daily",
+  "version": "0.1.0",
+  "description": "Cash position, AR aging, FX, and overnight cron status. Refresh ladder per source.",
+  "license": "BUSL-1.1",
+  "icon": { "lucide": "wallet" },
+  "dataSources": {
+    "cash": {
+      "type": "supabase",
+      "table": "v_cash_position",
+      "select": "*",
+      "refresh": { "mode": "interval", "every": "15m", "onFocus": true }
+    },
+    "ar_aging": {
+      "type": "sql",
+      "db": "ikenga.local",
+      "query": "select * from ar_aging_view",
+      "refresh": { "mode": "manual" }
+    },
+    "fx": {
+      "type": "fetch",
+      "url": "https://open.er-api.com/v6/latest/USD",
+      "refresh": { "mode": "interval", "every": "1h" }
+    },
+    "cron_status": {
+      "type": "file",
+      "path": "./data/last_run.json",
+      "refresh": { "mode": "watch" }
+    }
+  },
+  "fallback": {
+    "mode": "mock",
+    "dataTag": "ikenga-mock-data",
+    "banner": "Showing mock data — live sources unavailable."
+  },
+  "pin": { "suggested": true, "section": "finance", "label": "CFO Daily" },
+  "notes": { "enabled": true },
+  "requires": { "ikenga": ">=0.4", "bridge": "^1.0" }
+}

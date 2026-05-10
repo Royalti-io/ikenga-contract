@@ -34,22 +34,31 @@
     "./iyke": {
       "types": "./dist/iyke.d.ts",
       "import": "./dist/iyke.js"
+    },
+    "./artifact": {
+      "types": "./dist/artifact.d.ts",
+      "import": "./dist/artifact.js"
     }
   },
   "files": [
     "dist",
     "src",
+    "schemas",
     "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "generate:schemas": "node scripts/generate-schemas.mjs",
+    "test": "node --test --import=tsx 'src/**/*.test.ts'"
   },
   "dependencies": {
-    "zod": "^3.23.0"
+    "zod": "^3.23.0",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "typescript": "^5.4.0"
   },
   "publishConfig": {
