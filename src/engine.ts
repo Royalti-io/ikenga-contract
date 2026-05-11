@@ -4,6 +4,8 @@
 //   - engine-aider        (future)
 //   - engine-noop         (testing / shell-without-AI mode)
 
+import { z } from 'zod';
+
 export interface SessionOpts {
   cwd?: string;
   systemPrompt?: string;
@@ -33,12 +35,113 @@ export interface McpServerSpec {
   env?: Record<string, string>;
 }
 
+// ---------- Capabilities (single source of truth) ----------
+
+/**
+ * Capability flags every engine adapter advertises. This is the canonical
+ * shape consumed by both the shell-side ChatAdapter layer and any pkg that
+ * needs to reason about adapter features (wizard, settings UI, telemetry).
+ *
+ * Fields are intentionally a *superset* of what any single adapter
+ * supports — an adapter sets the ones it implements to `true` and the
+ * rest to `false`. Adding a new flag is a non-breaking schema change so
+ * long as adapters default it to `false` until they implement it.
+ */
+export const AgentCapabilitiesSchema = z.object({
+  /** Streams partial responses as they arrive (vs. all-at-once). */
+  streaming: z.boolean(),
+  /** Invokes external tools / function calls during a turn. */
+  toolUse: z.boolean(),
+  /** Emits an extended-thinking / reasoning channel separate from output. */
+  thinking: z.boolean(),
+  /** Produces structured artifacts (code blocks, files, images) the host renders. */
+  artifacts: z.boolean(),
+  /** Accepts file attachments as part of an input. */
+  fileAttachments: z.boolean(),
+  /** Accepts image input (vision). */
+  imageInput: z.boolean(),
+  /** Recognises a `/slash` command vocabulary. */
+  slashCommands: z.boolean(),
+  /** Lets the user switch models mid-thread. */
+  modelSwitching: z.boolean(),
+  /** Uses prompt-caching for repeated context (Anthropic-specific today). */
+  promptCaching: z.boolean(),
+  /** Runs agentic tools (recursive sub-agents, long-running loops). */
+  agenticTools: z.boolean(),
+  /** Speaks MCP — can register and route through MCP servers. */
+  mcp: z.boolean(),
+  /** Can resume a prior session by id. */
+  sessionResume: z.boolean(),
+});
+export type AgentCapabilities = z.infer<typeof AgentCapabilitiesSchema>;
+
+// ---------- Engine pkg manifest "engine" block ----------
+
+/**
+ * Per-adapter onboarding requirements surfaced in the first-run wizard.
+ * The wizard composes these instead of hardcoding per-agent forms —
+ * every engine pkg owns its own setup story.
+ */
+export const EngineOnboardingSchema = z.object({
+  /** Stronghold-vault keys this adapter needs at runtime (e.g. `ANTHROPIC_API_KEY`). */
+  requiredVaultKeys: z.array(z.string()).default([]),
+  /** Plain env-vars the adapter expects on the host shell. */
+  requiredEnvVars: z.array(z.string()).default([]),
+  /**
+   * CLI command the user can run to authenticate. The wizard surfaces this
+   * as a copy-to-clipboard hint — it never shells out on the user's behalf.
+   */
+  authCommand: z.string().optional(),
+  /** Docs URL for setting up this adapter. */
+  docsUrl: z.string().url().optional(),
+});
+export type EngineOnboarding = z.infer<typeof EngineOnboardingSchema>;
+
+/**
+ * Manifest block declared by engine-* pkgs. Read by the shell's
+ * `AdapterLoader` at pkg-discovery time; consumed by the wizard to compose
+ * adapter-specific onboarding hints.
+ */
+export const EngineProvidesSchema = z.object({
+  /**
+   * Stable id — matches the detection-side agent id (e.g. `claude-code`,
+   * `codex`, `aider`, `noop`). The wizard's `selected_agent_id` is matched
+   * against this field at adapter-resolve time.
+   */
+  agentId: z.string().min(1),
+  /** Display name; overrides any detection-side display if both present. */
+  display: z.string().optional(),
+  /** Snapshot of what this adapter implements. */
+  capabilities: AgentCapabilitiesSchema,
+  /** Onboarding requirements composed by the wizard. */
+  onboarding: EngineOnboardingSchema.default({
+    requiredVaultKeys: [],
+    requiredEnvVars: [],
+  }),
+});
+export type EngineProvides = z.infer<typeof EngineProvidesSchema>;
+
+// ---------- Engine adapter runtime contract ----------
+
 export interface Engine {
   /** Stable identifier — matches the pkg id of the engine adapter. */
   readonly id: string;
 
   /** Human-readable adapter version. */
   readonly version: string;
+
+  /**
+   * Static metadata copied from the loading manifest's `engine` block.
+   * Required: every adapter must surface its agentId / display / capabilities
+   * / onboarding so the shell and wizard can introspect without re-parsing
+   * the manifest.
+   */
+  readonly metadata: {
+    agentId: string;
+    display: string;
+    capabilities: AgentCapabilities;
+    onboarding: EngineOnboarding;
+  };
 
   /** Open a new session. Sessions are cheap; create one per pkg invocation. */
   startSession(opts: SessionOpts): Promise<Session>;
@@ -54,4 +157,35 @@ export interface Engine {
 
   /** Health check — used by the kernel before routing pkg requests. */
   healthCheck(): Promise<{ ok: boolean; reason?: string }>;
+}
+
+// ---------- Adapter loader contract ----------
+
+/**
+ * Loader the shell uses to bring engine-* pkgs online at boot, tear them
+ * down on removal, and gracefully fall back when the user's
+ * `selected_agent_id` has no installed adapter.
+ *
+ * Implementation lives shell-side (post-Phase-7); this interface lets
+ * the contract pin the shape so engine pkgs and the shell agree on the
+ * load lifecycle.
+ */
+export interface AdapterLoader {
+  /**
+   * Load + register the engine for a given pkg manifest. The manifest must
+   * carry an `engine` block (see `EngineProvidesSchema`); the loader
+   * resolves the adapter implementation and threads the manifest's
+   * metadata into the returned `Engine.metadata`.
+   */
+  load(manifest: { id: string; engine: EngineProvides }): Promise<Engine>;
+
+  /** Unload — used on pkg removal. After this resolves the agentId is unregistered. */
+  unload(agentId: string): Promise<void>;
+
+  /**
+   * Fallback returned when the requested agentId has no registered loader.
+   * Implementations MUST return a working `engine-noop` (or equivalent
+   * inert) adapter so the chat surface never dead-ends.
+   */
+  fallback(): Engine;
 }
