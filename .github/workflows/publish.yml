@@ -1,0 +1,74 @@
+# Publish @ikenga/contract to npm on v* tag push.
+#
+# Setup (one-time):
+#   1. Add NPM_TOKEN to org secrets (Royalti-io → Settings → Secrets → Actions).
+#   2. To release: bump version in package.json, commit, then:
+#        git tag v0.4.1 && git push origin v0.4.1
+#
+# The job verifies the tag matches package.json before publishing,
+# so accidentally pushing a wrong tag fails fast.
+
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry-run (validate + pack, no publish)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # required for npm --provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Verify tag matches package.json version
+        if: github.event_name == 'push'
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+          echo "OK: tag $GITHUB_REF_NAME matches package.json $PKG_VERSION"
+
+      - name: Publish (dry-run)
+        if: github.event.inputs.dry_run == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --no-git-checks --access public --provenance --dry-run
+
+      - name: Publish
+        if: github.event_name == 'push' || github.event.inputs.dry_run == 'false'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --no-git-checks --access public --provenance
