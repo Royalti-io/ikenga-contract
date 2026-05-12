@@ -9,6 +9,7 @@
 // On disk: `<pkg-root>/manifest.json` (JSON, not TOML).
 
 import { z } from 'zod';
+import { EngineProvidesSchema } from './engine.js';
 
 export const IKENGA_API_VERSION = 1 as const;
 export const IKENGA_API_MIN_SUPPORTED = 1 as const;
@@ -162,9 +163,20 @@ export const ManifestSchema = z.object({
   cron: z.array(CronEntrySchema).default([]),
   window: WindowBlockSchema.optional(),
   queries: QueriesBlockSchema.optional(),
+
+  /**
+   * Engine-adapter manifest block. Present iff this pkg is an engine-*
+   * adapter. Declares the agent id, display name, capability snapshot,
+   * and onboarding hints surfaced by the first-run wizard.
+   * See `@ikenga/contract/engine` for the source-of-truth schema.
+   */
+  engine: EngineProvidesSchema.optional(),
 });
 
 export type Manifest = z.infer<typeof ManifestSchema>;
+/** Alias retained for symmetry with the Rust side / external consumers. */
+export const PkgManifestSchema = ManifestSchema;
+export type PkgManifest = Manifest;
 
 // ---------- Helpers ----------
 
