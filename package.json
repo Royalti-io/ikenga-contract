@@ -1,6 +1,6 @@
 {
   "name": "@ikenga/contract",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Shared contract for the Ikenga pkg system: manifest schema, RPC types, Engine interface, capability scopes.",
   "license": "Apache-2.0",
   "repository": {
@@ -38,6 +38,10 @@
     "./artifact": {
       "types": "./dist/artifact.d.ts",
       "import": "./dist/artifact.js"
+    },
+    "./registry": {
+      "types": "./dist/registry.d.ts",
+      "import": "./dist/registry.js"
     }
   },
   "files": [

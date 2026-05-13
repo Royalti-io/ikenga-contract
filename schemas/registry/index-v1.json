@@ -1,0 +1,54 @@
+{
+  "$ref": "#/definitions/IkengaRegistryIndex",
+  "definitions": {
+    "IkengaRegistryIndex": {
+      "type": "object",
+      "properties": {
+        "$schemaVersion": {
+          "type": "number",
+          "const": 1
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "pkgs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "latest": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "latest",
+              "detail"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "$schemaVersion",
+        "updatedAt",
+        "pkgs"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://royalti-io.github.io/ikenga-contract/schemas/registry/index-v1.json"
+}

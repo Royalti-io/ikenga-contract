@@ -1,0 +1,655 @@
+{
+  "$ref": "#/definitions/IkengaRegistryPkgDetail",
+  "definitions": {
+    "IkengaRegistryPkgDetail": {
+      "type": "object",
+      "properties": {
+        "$schemaVersion": {
+          "type": "number",
+          "const": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              },
+              "publishedAt": {
+                "type": "string"
+              },
+              "tarball": {
+                "type": "string",
+                "format": "uri"
+              },
+              "integrity": {
+                "type": "string"
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "manifest": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(\\.[a-z0-9-]+)+$"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "ikenga_api": {
+                    "type": "string",
+                    "pattern": "^\\d+$"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "author": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "key": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "default": []
+                  },
+                  "skills": {
+                    "type": "string"
+                  },
+                  "commands": {
+                    "type": "string"
+                  },
+                  "agents": {
+                    "type": "string"
+                  },
+                  "mcp": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "command": {
+                          "type": "string"
+                        },
+                        "args": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "default": []
+                        },
+                        "env": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "default": {}
+                        },
+                        "lifecycle": {
+                          "type": "string",
+                          "enum": [
+                            "per-call",
+                            "long-lived"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "command"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "default": []
+                  },
+                  "sidecars": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "bin": {
+                          "type": "string"
+                        },
+                        "stdio": {
+                          "type": "string",
+                          "default": "json"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "bin"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "default": []
+                  },
+                  "permissions": {
+                    "type": "object",
+                    "properties": {
+                      "shell.execute": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      },
+                      "fs.read": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      },
+                      "fs.write": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      },
+                      "net": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      },
+                      "supabase.tables": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      },
+                      "vault.keys": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      }
+                    },
+                    "additionalProperties": false,
+                    "default": {}
+                  },
+                  "migrations": {
+                    "type": "string"
+                  },
+                  "settings": {
+                    "type": "object",
+                    "properties": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "boolean",
+                                "secret"
+                              ]
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "default": {},
+                            "description": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "type",
+                            "label"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "default": []
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "ui": {
+                    "type": "object",
+                    "properties": {
+                      "nav": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "icon": {
+                              "type": "string"
+                            },
+                            "section": {
+                              "type": "string"
+                            },
+                            "route": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "label",
+                            "route"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "default": []
+                      },
+                      "routes": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "path": {
+                              "type": "string"
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "iframe",
+                                "component"
+                              ]
+                            },
+                            "source": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "path",
+                            "kind",
+                            "source"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "default": []
+                      },
+                      "command_palette": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "shortcut": {
+                              "type": "string"
+                            },
+                            "action": {}
+                          },
+                          "required": [
+                            "id",
+                            "label"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "default": []
+                      },
+                      "side_pane_viewers": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "route": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "label",
+                            "route"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "default": []
+                      },
+                      "csp": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "permissions": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "additionalProperties": false,
+                    "default": {}
+                  },
+                  "iyke": {
+                    "type": "object",
+                    "properties": {
+                      "routes": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "method": {
+                              "type": "string",
+                              "enum": [
+                                "GET",
+                                "POST"
+                              ]
+                            },
+                            "path": {
+                              "type": "string"
+                            },
+                            "handler": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "method",
+                            "path",
+                            "handler"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "default": []
+                      },
+                      "events": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "cron": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "expr": {
+                          "type": "string"
+                        },
+                        "handler": {
+                          "type": "string"
+                        },
+                        "env_from_settings": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "default": []
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "expr",
+                        "handler"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "default": []
+                  },
+                  "window": {
+                    "type": "object",
+                    "properties": {
+                      "label": {
+                        "type": "string"
+                      },
+                      "url": {
+                        "type": "string"
+                      },
+                      "size": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      },
+                      "decorations": {
+                        "type": "boolean"
+                      },
+                      "menu": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "label",
+                      "url"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "queries": {
+                    "type": "object",
+                    "properties": {
+                      "key_prefixes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "engine": {
+                    "type": "object",
+                    "properties": {
+                      "agentId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "display": {
+                        "type": "string"
+                      },
+                      "capabilities": {
+                        "type": "object",
+                        "properties": {
+                          "streaming": {
+                            "type": "boolean"
+                          },
+                          "toolUse": {
+                            "type": "boolean"
+                          },
+                          "thinking": {
+                            "type": "boolean"
+                          },
+                          "artifacts": {
+                            "type": "boolean"
+                          },
+                          "fileAttachments": {
+                            "type": "boolean"
+                          },
+                          "imageInput": {
+                            "type": "boolean"
+                          },
+                          "slashCommands": {
+                            "type": "boolean"
+                          },
+                          "modelSwitching": {
+                            "type": "boolean"
+                          },
+                          "promptCaching": {
+                            "type": "boolean"
+                          },
+                          "agenticTools": {
+                            "type": "boolean"
+                          },
+                          "mcp": {
+                            "type": "boolean"
+                          },
+                          "sessionResume": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "streaming",
+                          "toolUse",
+                          "thinking",
+                          "artifacts",
+                          "fileAttachments",
+                          "imageInput",
+                          "slashCommands",
+                          "modelSwitching",
+                          "promptCaching",
+                          "agenticTools",
+                          "mcp",
+                          "sessionResume"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "onboarding": {
+                        "type": "object",
+                        "properties": {
+                          "requiredVaultKeys": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "default": []
+                          },
+                          "requiredEnvVars": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "default": []
+                          },
+                          "authCommand": {
+                            "type": "string"
+                          },
+                          "docsUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "additionalProperties": false,
+                        "default": {
+                          "requiredVaultKeys": [],
+                          "requiredEnvVars": []
+                        }
+                      }
+                    },
+                    "required": [
+                      "agentId",
+                      "capabilities"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "version",
+                  "ikenga_api"
+                ],
+                "additionalProperties": false
+              },
+              "deps": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "range": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "range"
+                  ],
+                  "additionalProperties": false
+                },
+                "default": []
+              }
+            },
+            "required": [
+              "version",
+              "publishedAt",
+              "tarball",
+              "integrity",
+              "manifest"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "$schemaVersion",
+        "name",
+        "updatedAt",
+        "versions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://royalti-io.github.io/ikenga-contract/schemas/registry/pkg-detail-v1.json"
+}

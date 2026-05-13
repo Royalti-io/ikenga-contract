@@ -7,18 +7,36 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { ArtifactManifestSchema } from '../dist/artifact.js';
+import { RegistryIndexSchema, PkgDetailSchema } from '../dist/registry.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const out = path.join(root, 'schemas', 'artifact', 'v0.json');
 
-await mkdir(path.dirname(out), { recursive: true });
+async function emit(relPath, schema, name, idUrl) {
+  const out = path.join(root, 'schemas', relPath);
+  await mkdir(path.dirname(out), { recursive: true });
+  const json = zodToJsonSchema(schema, { name, $refStrategy: 'none' });
+  json.$id = idUrl;
+  await writeFile(out, JSON.stringify(json, null, 2) + '\n', 'utf8');
+  console.log('Wrote', path.relative(root, out));
+}
 
-const json = zodToJsonSchema(ArtifactManifestSchema, {
-  name: 'IkengaArtifactManifest',
-  $refStrategy: 'none',
-});
-// Stamp the canonical published URL so consumers can copy from the file.
-json.$id = 'https://royalti-io.github.io/ikenga-contract/schemas/artifact/v0.json';
+await emit(
+  'artifact/v0.json',
+  ArtifactManifestSchema,
+  'IkengaArtifactManifest',
+  'https://royalti-io.github.io/ikenga-contract/schemas/artifact/v0.json',
+);
 
-await writeFile(out, JSON.stringify(json, null, 2) + '\n', 'utf8');
-console.log('Wrote', path.relative(root, out));
+await emit(
+  'registry/index-v1.json',
+  RegistryIndexSchema,
+  'IkengaRegistryIndex',
+  'https://royalti-io.github.io/ikenga-contract/schemas/registry/index-v1.json',
+);
+
+await emit(
+  'registry/pkg-detail-v1.json',
+  PkgDetailSchema,
+  'IkengaRegistryPkgDetail',
+  'https://royalti-io.github.io/ikenga-contract/schemas/registry/pkg-detail-v1.json',
+);
