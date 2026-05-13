@@ -1,6 +1,6 @@
 {
   "name": "@ikenga/contract",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Shared contract for the Ikenga pkg system: manifest schema, RPC types, Engine interface, capability scopes.",
   "license": "Apache-2.0",
   "repository": {
