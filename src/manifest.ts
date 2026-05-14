@@ -28,6 +28,14 @@ export const McpServerSchema = z.object({
   env: z.record(z.string()).default({}),
   /** "per-call" (default) | "long-lived" */
   lifecycle: z.enum(['per-call', 'long-lived']).optional(),
+  /** Phase 9: glob patterns relative to pkg dir; supervisor restarts the
+   * long-lived child 250 ms after any matched file changes. Per-call entries
+   * ignore this. Empty = no watcher. */
+  restart_when_changed: z.array(z.string()).default([]),
+  /** Phase 9: auto-restart on unexpected exit. Default true (existing
+   * supervisor behavior). Set false for one-shot long-lived tools. Per-call
+   * entries ignore this. */
+  auto_restart: z.boolean().default(true),
 });
 export type McpServer = z.infer<typeof McpServerSchema>;
 
@@ -38,6 +46,12 @@ export const SidecarSpecSchema = z.object({
   bin: z.string(),
   /** "json" (default) | "raw" */
   stdio: z.string().default('json'),
+  /** Phase 9: glob patterns relative to pkg dir; supervisor restarts the
+   * sidecar 250 ms after any matched file changes. Empty = no watcher. */
+  restart_when_changed: z.array(z.string()).default([]),
+  /** Phase 9: auto-restart on unexpected exit. Default true (existing
+   * supervisor behavior). Set false for one-shot tools. */
+  auto_restart: z.boolean().default(true),
 });
 export type SidecarSpec = z.infer<typeof SidecarSpecSchema>;
 
