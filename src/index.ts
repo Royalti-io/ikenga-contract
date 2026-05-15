@@ -1,6 +1,6 @@
 export * from './manifest.js';
 export * from './rpc.js';
-export * from './engine.js';
+export * from './engine/index.js';
 export * from './scopes.js';
 export * from './iyke.js';
 export * from './artifact.js';

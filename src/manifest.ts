@@ -9,7 +9,7 @@
 // On disk: `<pkg-root>/manifest.json` (JSON, not TOML).
 
 import { z } from 'zod';
-import { EngineProvidesSchema } from './engine.js';
+import { EngineProvidesSchema } from './engine/index.js';
 
 export const IKENGA_API_VERSION = 1 as const;
 export const IKENGA_API_MIN_SUPPORTED = 1 as const;
