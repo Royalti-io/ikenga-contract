@@ -85,7 +85,7 @@ export interface RpcMethods {
 
 // Notifications: shell → pkg
 export interface ShellToPkgNotifications {
-  'engine.event': { sessionId: string; event: import('./engine.js').EngineEvent };
+  'engine.event': { sessionId: string; event: import('./engine/index.js').EngineEvent };
   'shell.theme_changed': { theme: 'light' | 'dark' };
   'shell.pane_focused': { focused: boolean };
 }

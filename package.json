@@ -24,8 +24,8 @@
       "import": "./dist/rpc.js"
     },
     "./engine": {
-      "types": "./dist/engine.d.ts",
-      "import": "./dist/engine.js"
+      "types": "./dist/engine/index.d.ts",
+      "import": "./dist/engine/index.js"
     },
     "./scopes": {
       "types": "./dist/scopes.d.ts",

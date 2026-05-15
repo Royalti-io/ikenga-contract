@@ -2,13 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   AgentCapabilitiesSchema,
+  EngineNotImplementedError,
   EngineOnboardingSchema,
   EngineProvidesSchema,
   type AgentCapabilities,
   type Engine,
   type EngineProvides,
-} from './engine.js';
-import { ManifestSchema, PkgManifestSchema } from './manifest.js';
+} from './index.js';
+import { ManifestSchema, PkgManifestSchema } from '../manifest.js';
 
 const fullCaps: AgentCapabilities = {
   streaming: true,
@@ -202,4 +203,34 @@ test('AdapterLoader.load consumes a manifest carrying EngineProvides', () => {
     engine: provides,
   };
   assert.equal(input.engine.agentId, 'codex');
+});
+
+// ---------------- EngineNotImplementedError ----------------
+
+test('EngineNotImplementedError constructs cleanly with engineId only', () => {
+  const err = new EngineNotImplementedError('codex');
+  assert.equal(err.engineId, 'codex');
+  assert.equal(err.docsUrl, undefined);
+  assert.equal(err.message, 'Engine codex is not implemented yet');
+});
+
+test('EngineNotImplementedError constructs with docsUrl + custom message', () => {
+  const err = new EngineNotImplementedError('gemini', {
+    docsUrl: 'https://example.com/gemini-setup',
+    message: 'Gemini adapter is gated behind feature flag',
+  });
+  assert.equal(err.engineId, 'gemini');
+  assert.equal(err.docsUrl, 'https://example.com/gemini-setup');
+  assert.equal(err.message, 'Gemini adapter is gated behind feature flag');
+});
+
+test('EngineNotImplementedError is instanceof Error and EngineNotImplementedError', () => {
+  const err = new EngineNotImplementedError('aider');
+  assert.ok(err instanceof Error);
+  assert.ok(err instanceof EngineNotImplementedError);
+});
+
+test("EngineNotImplementedError.name is exactly 'EngineNotImplementedError'", () => {
+  const err = new EngineNotImplementedError('codex');
+  assert.equal(err.name, 'EngineNotImplementedError');
 });
