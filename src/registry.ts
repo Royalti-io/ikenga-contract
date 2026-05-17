@@ -33,6 +33,17 @@ export const PkgDepSchema = z.object({
 });
 export type PkgDep = z.infer<typeof PkgDepSchema>;
 
+/**
+ * Hosted preview screenshot for a registry pkg. The publish workflow uploads
+ * each `manifest.screenshots[].path` to a CDN and emits the absolute URL
+ * here, so the shell can render a preview without downloading the pkg.
+ */
+export const HostedScreenshotSchema = z.object({
+  url: z.string().url(),
+  caption: z.string().optional(),
+});
+export type HostedScreenshot = z.infer<typeof HostedScreenshotSchema>;
+
 export const PkgVersionSchema = z.object({
   /** Semver, e.g. `0.1.0`. */
   version: z.string(),
@@ -48,6 +59,14 @@ export const PkgVersionSchema = z.object({
   manifest: ManifestSchema,
   /** Cross-pkg deps within `@ikenga/pkg-*`. External deps ride in the tarball. */
   deps: z.array(PkgDepSchema).default([]),
+  /**
+   * Absolute URLs for the screenshots declared in the manifest. The publish
+   * workflow uploads `manifest.screenshots[].path` files to a CDN and emits
+   * the resulting URL here; consumers should prefer these over the relative
+   * `manifest.screenshots[].path` values (which are only meaningful after
+   * install). Same order as `manifest.screenshots`; captions are mirrored.
+   */
+  screenshots: z.array(HostedScreenshotSchema).default([]),
 });
 export type PkgVersion = z.infer<typeof PkgVersionSchema>;
 
@@ -80,6 +99,12 @@ export const RegistryEntrySchema = z.object({
   description: z.string().optional(),
   /** Manifest `kind` hint ("engine" | "skill" | "embedded" | "windowed"). */
   kind: z.string().optional(),
+  /**
+   * Hero screenshot URL for the catalog row thumbnail. Set to the first
+   * uploaded screenshot of the latest version. Omitted for pkgs without UI.
+   * Lets the shell render a thumb without fetching the per-pkg detail file.
+   */
+  screenshot: z.string().url().optional(),
 });
 export type RegistryEntry = z.infer<typeof RegistryEntrySchema>;
 

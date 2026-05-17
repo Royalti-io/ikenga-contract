@@ -147,6 +147,18 @@ export const QueriesBlockSchema = z.object({
   key_prefixes: z.array(z.string()).default([]),
 });
 
+/**
+ * UI preview screenshot. `path` is relative to the package's install_path
+ * for bundled pkgs; the shell resolves it to a webview-loadable URL on
+ * render. Registry pkgs surface absolute https:// URLs through the
+ * `screenshots` array on the registry entry (see `./registry.ts`).
+ */
+export const ScreenshotSchema = z.object({
+  path: z.string(),
+  caption: z.string().optional(),
+});
+export type Screenshot = z.infer<typeof ScreenshotSchema>;
+
 // ---------- Manifest ----------
 
 export const ManifestSchema = z.object({
@@ -185,6 +197,14 @@ export const ManifestSchema = z.object({
    * See `@ikenga/contract/engine` for the source-of-truth schema.
    */
   engine: EngineProvidesSchema.optional(),
+
+  /**
+   * Optional UI preview screenshots surfaced by the package manager and the
+   * install sheet. `path` is relative to the package's install_path; the
+   * shell mints a webview-loadable URL for it on render. Packages without
+   * UI (engines, MCP-only servers) typically leave this empty.
+   */
+  screenshots: z.array(ScreenshotSchema).default([]),
 });
 
 export type Manifest = z.infer<typeof ManifestSchema>;
