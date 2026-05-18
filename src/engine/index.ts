@@ -10,3 +10,5 @@
 export * from './adapter.js';
 export * from './acp.js';
 export * from './errors.js';
+export * from './portability.js';
+export * from './subagent-transcoder.js';
