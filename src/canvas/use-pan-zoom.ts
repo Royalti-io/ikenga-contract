@@ -54,24 +54,32 @@ export function usePanZoom(args: UsePanZoomArgs): UsePanZoom {
     onSelectionChange,
   } = args;
 
-  const [pan, setPanState] = useState<Viewport>({ x: 0, y: 0, scale: 1 });
+  const [pan, setPan] = useState<Viewport>({ x: 0, y: 0, scale: 1 });
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const spaceDown = useRef(false);
   const panStart = useRef<{ x: number; y: number } | null>(null);
+  // Latest pan reachable synchronously (for beginPan's offset seed) without
+  // adding `pan` to the gesture callbacks' deps.
+  const panRef = useRef(pan);
+  panRef.current = pan;
 
-  // Wrap setPan so the controlled mirror callback fires on every change.
-  const setPan = useCallback<React.Dispatch<React.SetStateAction<Viewport>>>(
-    (next) => {
-      setPanState((prev) => {
-        const resolved = typeof next === 'function' ? (next as (p: Viewport) => Viewport)(prev) : next;
-        onViewportChange?.(resolved);
-        return resolved;
-      });
-    },
-    [onViewportChange]
-  );
+  // Mirror viewport changes to the controlled parent in an effect (never
+  // inside a setState updater — that would setState-during-render the parent
+  // and trip React's "Cannot update a component while rendering a different
+  // component" warning). The ref skips the initial mount so the parent isn't
+  // notified of the default {0,0,1} before any real fit.
+  const viewportCbRef = useRef(onViewportChange);
+  viewportCbRef.current = onViewportChange;
+  const mountedViewport = useRef(false);
+  useEffect(() => {
+    if (!mountedViewport.current) {
+      mountedViewport.current = true;
+      return;
+    }
+    viewportCbRef.current?.(pan);
+  }, [pan]);
 
   // Auto-fit: scale the bounding box of all items into the visible area,
   // scaling down only (never up). Reserves the palette gutter in edit mode.
@@ -155,10 +163,8 @@ export function usePanZoom(args: UsePanZoomArgs): UsePanZoom {
   }, [editMode, onEditModeChange, onSelectionChange]);
 
   const beginPan = useCallback((clientX: number, clientY: number) => {
-    setPanState((p) => {
-      panStart.current = { x: clientX - p.x, y: clientY - p.y };
-      return p;
-    });
+    const p = panRef.current;
+    panStart.current = { x: clientX - p.x, y: clientY - p.y };
     stageRef.current?.classList.add('is-dragging');
     if (canvasRef.current) canvasRef.current.style.cursor = 'grabbing';
   }, []);
