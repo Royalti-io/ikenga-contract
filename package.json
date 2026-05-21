@@ -50,7 +50,8 @@
     "./canvas": {
       "types": "./dist/canvas/index.d.ts",
       "import": "./dist/canvas/index.js"
-    }
+    },
+    "./canvas/canvas.css": "./dist/canvas/canvas.css"
   },
   "files": [
     "dist",
@@ -59,7 +60,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
     "dev": "tsc -p tsconfig.json --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "generate:schemas": "node scripts/generate-schemas.mjs",

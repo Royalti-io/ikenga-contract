@@ -30,6 +30,7 @@ export interface CanvasProps<T> {
   layout: Record<ItemId, Placement>; // controlled
   viewport: Viewport; // controlled
   editMode: boolean; // controlled
+  selectedId?: ItemId | null; // controlled — drives ItemRenderState.isSelected
   gridSnap?: number; // default 12 (home), 24 for studio
   renderItem: (item: T, state: ItemRenderState) => ReactNode;
   onLayoutChange?: (layout: Record<ItemId, Placement>) => void;
@@ -38,6 +39,8 @@ export interface CanvasProps<T> {
   onSelectionChange?: (selectedId: ItemId | null) => void;
   autoFitOnResize?: boolean; // default true
   className?: string;
+  /** Consumer chrome (top bar, palette) rendered inside the canvas surface. */
+  children?: ReactNode;
 }
 
 export interface CanvasHandle {
