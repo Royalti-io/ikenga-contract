@@ -41,7 +41,7 @@ export const SCOPE_CATALOGUE: ScopeDef[] = [
   { scope: 'fs:write', description: 'Write files inside the shell-managed sandbox.', sensitive: true },
 
   // engine
-  { scope: 'engine:invoke', description: 'Start sessions and stream from the active AI engine.' },
+  { scope: 'engine:invoke', description: 'Start sessions and stream from the active AI engine.', sensitive: true },
   { scope: 'engine:register_mcp', description: 'Register additional MCP servers with the engine.', sensitive: true },
 
   // shell chrome
