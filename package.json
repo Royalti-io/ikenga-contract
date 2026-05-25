@@ -39,6 +39,11 @@
       "types": "./dist/artifact.d.ts",
       "import": "./dist/artifact.js"
     },
+    "./canvas": {
+      "types": "./dist/canvas/index.d.ts",
+      "import": "./dist/canvas/index.js"
+    },
+    "./canvas/canvas.css": "./dist/canvas/canvas.css",
     "./registry": {
       "types": "./dist/registry.d.ts",
       "import": "./dist/registry.js"
