@@ -153,6 +153,26 @@ export const SqliteCapabilitySchema = z.object({
 });
 export type SqliteCapability = z.infer<typeof SqliteCapabilitySchema>;
 
+/** Supabase capability. Mirrors `SupabaseCapability` in
+ *  `shell/src-tauri/src/pkg/manifest.rs`. */
+export const SupabaseCapabilitySchema = z.object({
+  /** When true, mint fails if the Supabase vault keys are missing; when
+   *  false/omitted, missing keys surface as `supabase: null` in host context. */
+  required: z.boolean().default(false),
+});
+export type SupabaseCapability = z.infer<typeof SupabaseCapabilitySchema>;
+
+/** Native child-webview capability. Mirrors `WebviewCapability` in
+ *  `shell/src-tauri/src/pkg/manifest.rs`. */
+export const WebviewCapabilitySchema = z.object({
+  /** Whether this pkg may create child webviews via the kernel. Required for
+   *  any `ui.routes[]` entry with `kind = "webview"` to mount. */
+  child_webviews: z.boolean().default(false),
+  /** Named cookie/data partitions; empty = the implicit "default" partition. */
+  partitions: z.array(z.string()).default([]),
+});
+export type WebviewCapability = z.infer<typeof WebviewCapabilitySchema>;
+
 export const WindowBlockSchema = z.object({
   label: z.string(),
   url: z.string(),
@@ -207,6 +227,15 @@ export const ManifestSchema = z.object({
   cron: z.array(CronEntrySchema).default([]),
   window: WindowBlockSchema.optional(),
   queries: QueriesBlockSchema.optional(),
+
+  /** Optional capabilities the host resolves and injects at iframe-mount
+   *  time via the AppBridge `hostContext` handshake. Mirrors the Rust
+   *  `CapabilitiesBlock` in `shell/src-tauri/src/pkg/manifest.rs`. */
+  capabilities: z.object({
+    supabase: SupabaseCapabilitySchema.optional(),
+    sqlite: SqliteCapabilitySchema.optional(),
+    webview: WebviewCapabilitySchema.optional(),
+  }).optional(),
 
   /**
    * Engine-adapter manifest block. Present iff this pkg is an engine-*
