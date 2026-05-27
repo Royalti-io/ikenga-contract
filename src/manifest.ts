@@ -11,7 +11,9 @@
 import { z } from 'zod';
 import { EngineProvidesSchema } from './engine/index.js';
 
-export const IKENGA_API_VERSION = 1 as const;
+// v2 (WP-05): added capabilities.sqlite + permissions["sqlite.tables"];
+// permissions["supabase.tables"] kept as a compat alias for api=1 manifests.
+export const IKENGA_API_VERSION = 2 as const;
 export const IKENGA_API_MIN_SUPPORTED = 1 as const;
 
 // ---------- Sub-schemas ----------
@@ -60,6 +62,12 @@ export const PermissionsSchema = z.object({
   'fs.read': z.array(z.string()).default([]),
   'fs.write': z.array(z.string()).default([]),
   net: z.array(z.string()).default([]),
+  /** Local SQLite table patterns; validated against tables.json at install time.
+   *  For api ≥ 2 manifests. Replaces `supabase.tables`. */
+  'sqlite.tables': z.array(z.string()).default([]),
+  /** @deprecated api=1 compat alias for `sqlite.tables`. New manifests should
+   *  use `sqlite.tables` instead. Kept so ikenga_api="1" manifests parse
+   *  without errors during the transition window. */
   'supabase.tables': z.array(z.string()).default([]),
   'vault.keys': z.array(z.string()).default([]),
 }).default({});
@@ -135,6 +143,36 @@ export const CronEntrySchema = z.object({
   env_from_settings: z.array(z.string()).default([]),
 });
 
+/** Local SQLite capability (api ≥ 2). Threads the logical db name into the
+ *  iframe host context so the pkg can call `db_query` without hard-coding it.
+ *  Mirrors `SqliteCapability` in `shell/src-tauri/src/pkg/manifest.rs`. */
+export const SqliteCapabilitySchema = z.object({
+  /** Logical DB name. Currently only `"ikenga.local"` is supported.
+   *  Defaults to `"ikenga.local"` when omitted. */
+  db: z.string().default('ikenga.local'),
+});
+export type SqliteCapability = z.infer<typeof SqliteCapabilitySchema>;
+
+/** Supabase capability. Mirrors `SupabaseCapability` in
+ *  `shell/src-tauri/src/pkg/manifest.rs`. */
+export const SupabaseCapabilitySchema = z.object({
+  /** When true, mint fails if the Supabase vault keys are missing; when
+   *  false/omitted, missing keys surface as `supabase: null` in host context. */
+  required: z.boolean().default(false),
+});
+export type SupabaseCapability = z.infer<typeof SupabaseCapabilitySchema>;
+
+/** Native child-webview capability. Mirrors `WebviewCapability` in
+ *  `shell/src-tauri/src/pkg/manifest.rs`. */
+export const WebviewCapabilitySchema = z.object({
+  /** Whether this pkg may create child webviews via the kernel. Required for
+   *  any `ui.routes[]` entry with `kind = "webview"` to mount. */
+  child_webviews: z.boolean().default(false),
+  /** Named cookie/data partitions; empty = the implicit "default" partition. */
+  partitions: z.array(z.string()).default([]),
+});
+export type WebviewCapability = z.infer<typeof WebviewCapabilitySchema>;
+
 export const WindowBlockSchema = z.object({
   label: z.string(),
   url: z.string(),
@@ -189,6 +227,15 @@ export const ManifestSchema = z.object({
   cron: z.array(CronEntrySchema).default([]),
   window: WindowBlockSchema.optional(),
   queries: QueriesBlockSchema.optional(),
+
+  /** Optional capabilities the host resolves and injects at iframe-mount
+   *  time via the AppBridge `hostContext` handshake. Mirrors the Rust
+   *  `CapabilitiesBlock` in `shell/src-tauri/src/pkg/manifest.rs`. */
+  capabilities: z.object({
+    supabase: SupabaseCapabilitySchema.optional(),
+    sqlite: SqliteCapabilitySchema.optional(),
+    webview: WebviewCapabilitySchema.optional(),
+  }).optional(),
 
   /**
    * Engine-adapter manifest block. Present iff this pkg is an engine-*
