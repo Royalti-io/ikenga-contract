@@ -1,5 +1,6 @@
 export * from './manifest.js';
 export * from './rpc.js';
+export * from './host-verbs.js';
 export * from './engine/index.js';
 export * from './scopes.js';
 export * from './iyke.js';
