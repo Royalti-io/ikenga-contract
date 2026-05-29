@@ -173,6 +173,16 @@ export const WebviewCapabilitySchema = z.object({
 });
 export type WebviewCapability = z.infer<typeof WebviewCapabilitySchema>;
 
+/** Agent-ops host-bridge capability (api ≥ 2). Opt-in to the privileged
+ *  `host.agentOps.*` verbs (run-now / enable-disable / list-jobs) the shell
+ *  exposes for the agent-ops observability pkg — these reach the always-on
+ *  cron daemon's localhost trigger endpoint and read the daemon's config +
+ *  state files, hops an iframe cannot make itself. Presence of the block is
+ *  the gate (mirrors the `capabilities.sqlite` opt-in). Mirrors
+ *  `AgentOpsCapability` in `shell/src-tauri/src/pkg/manifest.rs`. */
+export const AgentOpsCapabilitySchema = z.object({});
+export type AgentOpsCapability = z.infer<typeof AgentOpsCapabilitySchema>;
+
 export const WindowBlockSchema = z.object({
   label: z.string(),
   url: z.string(),
@@ -235,6 +245,7 @@ export const ManifestSchema = z.object({
     supabase: SupabaseCapabilitySchema.optional(),
     sqlite: SqliteCapabilitySchema.optional(),
     webview: WebviewCapabilitySchema.optional(),
+    agentOps: AgentOpsCapabilitySchema.optional(),
   }).optional(),
 
   /**
