@@ -62,6 +62,44 @@ export type AgentOpsSetEnabledResult =
   | { ok: true; jobId: string; enabled: boolean }
   | AgentOpsErrorResult;
 
+/** The editable job fields the CRUD form sends to `host.agentOps.upsertJob`.
+ *  The host fills JobDefinition defaults (schedule_dialect, timeout_ms, retries,
+ *  backoff, concurrency_policy) for any omitted field; the daemon's Zod loader
+ *  is the final validation backstop on next config load. */
+export interface AgentOpsJobInput {
+  id: string;
+  label: string;
+  schedule: string;
+  timezone?: string;
+  enabled?: boolean;
+  mode?: 'agent' | 'script';
+  command: string;
+  model?: string | null;
+  agent?: string | null;
+  schedule_dialect?: '5f' | '6f';
+  timeout_ms?: number;
+}
+
+/** `host.agentOps.upsertJob({ job })` — create-or-update a job in the
+ *  project-scoped config (atomic rewrite; replace by id if present, else
+ *  append). The daemon honors it on next config load. Validating-only write —
+ *  the shell does NOT run the job, never becomes the executor. */
+export interface AgentOpsUpsertJobArgs {
+  job: AgentOpsJobInput;
+}
+export type AgentOpsUpsertJobResult =
+  | { ok: true; jobId: string; created: boolean }
+  | AgentOpsErrorResult;
+
+/** `host.agentOps.deleteJob({ jobId })` — remove a job from the project-scoped
+ *  config (atomic rewrite). The daemon stops scheduling it on next load. */
+export interface AgentOpsDeleteJobArgs {
+  jobId: string;
+}
+export type AgentOpsDeleteJobResult =
+  | { ok: true; jobId: string }
+  | AgentOpsErrorResult;
+
 /** A merged config+state row as returned by `host.agentOps.listJobs`. Config
  *  fields come from `~/.atelier/skill-agent-ops/jobs.json` (a JobDefinition);
  *  `state` is that job's entry in `.company/cron/jobs-state.json` (or null if
