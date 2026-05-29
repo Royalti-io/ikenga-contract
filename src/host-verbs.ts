@@ -100,6 +100,61 @@ export type AgentOpsDeleteJobResult =
   | { ok: true; jobId: string }
   | AgentOpsErrorResult;
 
+/** `host.agentOps.tailRun({ jobId, offset? })` — read the live (or last-completed)
+ *  run output for a job by byte-range, for the pkg's Live-output view.
+ *
+ *  Unlike the other agent-ops verbs (which reach the daemon's localhost endpoint
+ *  or rewrite its config), tailRun is a pure **filesystem read on the shell's own
+ *  event loop**: it opens the per-job marker (`~/.agent-ops/runs/<slug>.marker.json`)
+ *  to learn the current run's `tailPath` + `status` + `pid`, then reads that tail
+ *  file from `offset` forward (capped per call). Because it never touches the
+ *  daemon, the daemon being blocked mid-run (synchronously executing a job) is
+ *  irrelevant — the shell still streams whatever the child has teed to disk so far.
+ *
+ *  Mechanism is **script-mode only**: the daemon tees a script job's combined
+ *  stdout/stderr to the tail file as it runs. Agent jobs (`claude -p`) stay
+ *  byte-for-byte unchanged and have no tail file, so tailRun returns an empty
+ *  chunk with `mode:'agent'` (the pkg renders 'live output not available for
+ *  agent jobs' + a spinner driven off the marker's `status`).
+ *
+ *  Polling loop: call with `offset:0` first, then feed the returned `nextOffset`
+ *  back on each poll. `eof` true means the reader caught up to the current end of
+ *  file; keep polling while `running` is true. After a run completes the marker
+ *  still points at the final tail, so `running:false` STILL returns the final
+ *  chunk for scrollback — the view shows the completed output, not an empty pane.
+ *
+ *  - `running`     — `status === 'running'` AND the marker's `pid` is alive.
+ *  - `status`      — the marker's `status` (`'running' | 'done'`), or `null` when
+ *                    no marker exists yet (job has never produced a run).
+ *  - `startedAtMs` — the run's start epoch-ms from the marker, else `null`.
+ *  - `mode`        — `'script'` (has a tail) / `'agent'` (no tail) / `null` (no marker).
+ *  - `chunk`       — lossy-utf8 decode of the bytes read this call (may be empty).
+ *  - `nextOffset`  — `offset + bytesRead`; pass back on the next poll.
+ *  - `eof`         — reached the current end of the tail file.
+ *
+ *  Best-effort + non-throwing on the shell side: a missing marker / missing tail /
+ *  unreadable file resolves to `{ ok:true, chunk:'', eof:true, ... }` rather than
+ *  an error, so the view degrades to 'no output yet'. Only a path-escape attempt
+ *  (marker.tailPath pointing outside `~/.agent-ops/runs/`) maps to an
+ *  `{ ok:false, code:'io_error' }`. */
+export interface AgentOpsTailRunArgs {
+  jobId: string;
+  /** Byte offset into the tail file to read from. Defaults to 0. */
+  offset?: number;
+}
+export type AgentOpsTailRunResult =
+  | {
+      ok: true;
+      running: boolean;
+      status: 'running' | 'done' | null;
+      startedAtMs: number | null;
+      mode: 'agent' | 'script' | null;
+      chunk: string;
+      nextOffset: number;
+      eof: boolean;
+    }
+  | AgentOpsErrorResult;
+
 /** A merged config+state row as returned by `host.agentOps.listJobs`. Config
  *  fields come from `~/.atelier/skill-agent-ops/jobs.json` (a JobDefinition);
  *  `state` is that job's entry in `.company/cron/jobs-state.json` (or null if
