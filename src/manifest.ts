@@ -207,6 +207,39 @@ export const ScreenshotSchema = z.object({
 });
 export type Screenshot = z.infer<typeof ScreenshotSchema>;
 
+/** Forward-dependency source for a `requires[]` entry. Mirrors the Rust
+ *  `RequireSource` enum (`pkg/manifest.rs`) and the registry `ProvenanceSource`
+ *  set. Optional on an entry — absent means the resolver looks the dep up in the
+ *  store registry / catalog. */
+export const RequireSourceSchema = z.enum(['git', 'npx', 'catalog', 'local']);
+export type RequireSource = z.infer<typeof RequireSourceSchema>;
+
+/**
+ * One forward-dependency edge (`requires[]` element, ADR-015 §3 / Ọba WP-11).
+ * Names a standalone Ọba primitive a pkg `requires`; the resolver (WP-13/14)
+ * installs the closure at install/enable. This is a SEPARATE graph from a
+ * skill's `SKILL.md` `depends_on` (the G-04 authoring star, `skill-core`-only):
+ * a pkg `requires` MAY reference any primitive, and the publish-time lift
+ * (WP-12) compiles `depends_on` into this field. `.strict()` mirrors the Rust
+ * `deny_unknown_fields` on `RequiresEntry`. Source of truth: the Rust struct in
+ * `shell/src-tauri/src/pkg/manifest.rs` — keep in lockstep.
+ */
+export const RequiresEntrySchema = z
+  .object({
+    /** Primitive kind: skill | agent | command | hook | mcp. Kept a string so a
+     *  future kind doesn't break old manifests. */
+    kind: z.string(),
+    /** Primitive name (e.g. `skill-core`, `@ikenga/studio-beat-detect`). */
+    name: z.string(),
+    /** Optional fetch source. */
+    source: RequireSourceSchema.optional(),
+    /** Optional git tag/branch or version pin. The shape leaves room for an
+     *  explicit semver range later without another schema break. */
+    ref: z.string().optional(),
+  })
+  .strict();
+export type RequiresEntry = z.infer<typeof RequiresEntrySchema>;
+
 // ---------- Manifest ----------
 
 export const ManifestSchema = z.object({
@@ -263,6 +296,16 @@ export const ManifestSchema = z.object({
    * UI (engines, MCP-only servers) typically leave this empty.
    */
   screenshots: z.array(ScreenshotSchema).default([]),
+
+  /**
+   * Forward dependency declarations (ADR-015 §3 / Ọba WP-11). Each entry names a
+   * standalone primitive this pkg `requires`; the Ọba resolver installs the
+   * closure at install/enable. A SEPARATE graph from a skill's `depends_on` (the
+   * G-04 authoring star). Empty by default so pre-Phase-4 manifests are
+   * unaffected. Mirrors `requires: Vec<RequiresEntry>` on the Rust `Manifest`
+   * (`pkg/manifest.rs`) — keep in lockstep (`deny_unknown_fields`).
+   */
+  requires: z.array(RequiresEntrySchema).default([]),
 });
 
 export type Manifest = z.infer<typeof ManifestSchema>;
