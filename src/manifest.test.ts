@@ -40,6 +40,16 @@ test('RequiresEntry: rejects unknown field (.strict mirrors Rust deny_unknown_fi
   );
 });
 
+test('RequiresEntry: kind bundle is accepted (WP-18 G-BUNDLE)', () => {
+  // WP-18 locked design decision 4: `RequiresEntrySchema.kind` is `z.string()`
+  // (a free string, not a closed enum), so a `requires` entry may reference a
+  // bundle — `{kind:"bundle", name}` parses and carries the kind through. This
+  // is the contract-side half of the G-BUNDLE "requires kind:bundle parses" DoD.
+  const e = RequiresEntrySchema.parse({ kind: 'bundle', name: 'studio-archetypes' });
+  assert.equal(e.kind, 'bundle');
+  assert.equal(e.name, 'studio-archetypes');
+});
+
 test('RequiresEntry: rejects an out-of-set source', () => {
   assert.throws(() =>
     RequiresEntrySchema.parse({ kind: 'skill', name: 'x', source: 'ftp' }),
