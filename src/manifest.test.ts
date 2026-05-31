@@ -68,6 +68,20 @@ test('Manifest: requires parses and round-trips', () => {
 });
 
 test('Manifest: requires defaults to [] when absent (pre-Phase-4 manifest)', () => {
-  const m = ManifestSchema.parse({ ...BASE, skills: 'skills' });
+  const m = ManifestSchema.parse({ ...BASE });
   assert.deepEqual(m.requires, []);
+});
+
+test('Manifest: retired bundling fields are no longer part of the type (WP-17)', () => {
+  // ADR-015 decision 4: `skills`/`commands`/`agents` were hard-retired from the
+  // schema (lockstep with the Rust `deny_unknown_fields` Manifest, which REJECTS
+  // them — the authoritative loader). ManifestSchema is non-strict, so a stray
+  // legacy key is stripped rather than rejected here; assert it does not survive
+  // onto the parsed object.
+  const m = ManifestSchema.parse({ ...BASE, skills: 'skills', commands: 'commands' }) as Record<
+    string,
+    unknown
+  >;
+  assert.equal(m.skills, undefined);
+  assert.equal(m.commands, undefined);
 });

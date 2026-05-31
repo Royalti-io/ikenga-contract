@@ -257,9 +257,13 @@ export const ManifestSchema = z.object({
   targets: z.array(z.string()).default([]),
 
   // Capability blocks (all optional — kernel walks present blocks)
-  skills: z.string().optional(),
-  commands: z.string().optional(),
-  agents: z.string().optional(),
+  // NOTE (WP-17, ADR-015 decision 4): the `skills`/`commands`/`agents`
+  // asset-bundling fields were HARD-RETIRED (lockstep with the Rust
+  // `Manifest`). A pkg no longer embeds Claude-config assets; it only
+  // `requires` standalone Ọba primitives. The schema is `.strict()`, so a
+  // manifest still declaring any of them now FAILS validation (no deprecation
+  // window). The shell builtin `com.ikenga.iyke` places its skill/commands by
+  // convention from on-disk folders, not via a manifest field.
   mcp: z.array(McpServerSchema).default([]),
   sidecars: z.array(SidecarSpecSchema).default([]),
   permissions: PermissionsSchema,
