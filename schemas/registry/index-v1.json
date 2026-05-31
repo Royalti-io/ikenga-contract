@@ -30,6 +30,17 @@
               },
               "kind": {
                 "type": "string"
+              },
+              "screenshot": {
+                "type": "string",
+                "format": "uri"
+              },
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "hidden"
+                ]
               }
             },
             "required": [

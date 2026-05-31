@@ -105,6 +105,15 @@ export const RegistryEntrySchema = z.object({
    * Lets the shell render a thumb without fetching the per-pkg detail file.
    */
   screenshot: z.string().url().optional(),
+  /**
+   * Catalog visibility. `"hidden"` keeps the pkg installable by exact name
+   * (CLI `add`/`update`, registry install, update detection) but omits it
+   * from the default browse/catalog surfaces — used for dev/test fixtures
+   * and scaffolds (e.g. `pkg-hello`, `pkg-engine-noop`, the cursor-agent
+   * scaffold). Absent ⇒ treated as `"public"`. Set by the publish pipeline's
+   * curation step (`ikenga-pkgs/scripts/update-registry-index.mjs`).
+   */
+  visibility: z.enum(['public', 'hidden']).optional(),
 });
 export type RegistryEntry = z.infer<typeof RegistryEntrySchema>;
 
