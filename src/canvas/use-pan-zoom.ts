@@ -18,6 +18,8 @@ export interface UsePanZoomArgs {
   editMode: boolean;
   /** Re-fit on window resize. Default true. */
   autoFitOnResize?: boolean;
+  /** Arrow-key pan + +/- zoom when the canvas root is focused. Default true (WCAG 2.5.7). */
+  keyboardPan?: boolean;
   /** Notified whenever the viewport pan/scale changes (controlled mirror). */
   onViewportChange?: (viewport: Viewport) => void;
   /** Escape exits edit mode → parent owns the state flip. */
@@ -49,6 +51,7 @@ export function usePanZoom(args: UsePanZoomArgs): UsePanZoom {
     layout,
     editMode,
     autoFitOnResize = true,
+    keyboardPan = true,
     onViewportChange,
     onEditModeChange,
     onSelectionChange,
@@ -130,7 +133,9 @@ export function usePanZoom(args: UsePanZoomArgs): UsePanZoom {
     autoFit(true);
   }, [editMode, autoFit]);
 
-  // Keyboard — Escape exits edit, Space arms the pan-grab cursor.
+  // Keyboard — Escape exits edit, Space arms the pan-grab cursor. When the
+  // canvas root itself holds focus, arrow keys pan and +/- zoom: the keyboard
+  // alternative to space+drag / pinch-zoom (WCAG 2.5.7 Dragging Movements).
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && editMode) {
@@ -147,6 +152,42 @@ export function usePanZoom(args: UsePanZoomArgs): UsePanZoom {
         canvasRef.current.style.cursor = 'grab';
         e.preventDefault();
       }
+      // Arrow-pan / +/- zoom only when the canvas surface itself is focused,
+      // so widget-internal controls keep their own arrow-key semantics.
+      if (keyboardPan && canvasRef.current && document.activeElement === canvasRef.current) {
+        // 24 canvas units per step, scaled so the on-screen nudge feels
+        // consistent at any zoom level.
+        const PAN_STEP = 24;
+        const ZOOM_STEP = 0.1;
+        switch (e.key) {
+          case 'ArrowUp':
+            setPan((p) => ({ ...p, y: p.y + PAN_STEP * p.scale }));
+            e.preventDefault();
+            break;
+          case 'ArrowDown':
+            setPan((p) => ({ ...p, y: p.y - PAN_STEP * p.scale }));
+            e.preventDefault();
+            break;
+          case 'ArrowLeft':
+            setPan((p) => ({ ...p, x: p.x + PAN_STEP * p.scale }));
+            e.preventDefault();
+            break;
+          case 'ArrowRight':
+            setPan((p) => ({ ...p, x: p.x - PAN_STEP * p.scale }));
+            e.preventDefault();
+            break;
+          default:
+            // '=' shares the key with '+'; both Equal and NumpadAdd zoom in.
+            if (e.code === 'Equal' || e.code === 'NumpadAdd') {
+              setPan((p) => ({ ...p, scale: Math.min(2, p.scale + ZOOM_STEP) }));
+              e.preventDefault();
+            } else if (e.code === 'Minus' || e.code === 'NumpadSubtract') {
+              setPan((p) => ({ ...p, scale: Math.max(0.2, p.scale - ZOOM_STEP) }));
+              e.preventDefault();
+            }
+            break;
+        }
+      }
     };
     const up = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
@@ -160,7 +201,7 @@ export function usePanZoom(args: UsePanZoomArgs): UsePanZoom {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, [editMode, onEditModeChange, onSelectionChange]);
+  }, [editMode, keyboardPan, onEditModeChange, onSelectionChange]);
 
   const beginPan = useCallback((clientX: number, clientY: number) => {
     const p = panRef.current;

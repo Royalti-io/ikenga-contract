@@ -38,6 +38,10 @@ export interface CanvasProps<T> {
   onEditModeChange?: (editMode: boolean) => void;
   onSelectionChange?: (selectedId: ItemId | null) => void;
   autoFitOnResize?: boolean; // default true
+  /** Arrow-key pan + +/- zoom when the canvas root is focused. Default true (WCAG 2.5.7). */
+  keyboardPan?: boolean;
+  /** Accessible name on the role="application" canvas root. Default 'Canvas'. */
+  ariaLabel?: string;
   className?: string;
   /** Consumer chrome (top bar, palette) rendered inside the canvas surface. */
   children?: ReactNode;

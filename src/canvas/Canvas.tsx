@@ -51,6 +51,8 @@ function CanvasInner<T>(props: CanvasProps<T>, ref: React.Ref<CanvasHandle>) {
     onEditModeChange,
     onSelectionChange,
     autoFitOnResize = true,
+    keyboardPan = true,
+    ariaLabel = 'Canvas',
     className,
   } = props;
 
@@ -58,6 +60,7 @@ function CanvasInner<T>(props: CanvasProps<T>, ref: React.Ref<CanvasHandle>) {
     layout,
     editMode,
     autoFitOnResize,
+    keyboardPan,
     onViewportChange,
     onEditModeChange,
     onSelectionChange,
@@ -83,6 +86,14 @@ function CanvasInner<T>(props: CanvasProps<T>, ref: React.Ref<CanvasHandle>) {
       const id = itemEl.getAttribute('data-id') as ItemId | null;
       if (!id) return;
       onSelectionChange?.(id);
+      // Move DOM focus to the newly-selected item so keyboard users land on it
+      // and screen readers announce the selection (WCAG 2.4.3 Focus Order). The
+      // rAF waits for React to commit the tabIndex={0} / aria-selected update.
+      requestAnimationFrame(() =>
+        canvasRef.current
+          ?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`)
+          ?.focus()
+      );
       beginDrag(id, e.clientX, e.clientY);
       e.preventDefault();
       return;
@@ -107,6 +118,9 @@ function CanvasInner<T>(props: CanvasProps<T>, ref: React.Ref<CanvasHandle>) {
       ref={canvasRef}
       className={className ? `ikenga-canvas ${className}` : 'ikenga-canvas'}
       data-mode-edit={editMode ? 'true' : 'false'}
+      role="application"
+      aria-label={ariaLabel}
+      tabIndex={0}
       onMouseDown={onMouseDown}
       onDoubleClick={onDoubleClick}
     >
@@ -144,7 +158,17 @@ function CanvasInner<T>(props: CanvasProps<T>, ref: React.Ref<CanvasHandle>) {
             'data-id': id,
             style: injected,
             className,
-          } as Partial<typeof el.props> & { key: string; 'data-id': string });
+            // Selected item is programmatically focusable (tabIndex 0) and
+            // announces its selected state; unselected items stay out of the
+            // tab sequence (tabIndex -1) like a roving tablist (WCAG 2.4.3).
+            'aria-selected': isSelected,
+            tabIndex: isSelected ? 0 : -1,
+          } as Partial<typeof el.props> & {
+            key: string;
+            'data-id': string;
+            'aria-selected': boolean;
+            tabIndex: number;
+          });
         })}
       </div>
 
