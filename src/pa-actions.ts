@@ -57,8 +57,26 @@ export interface DraftItem {
 	fromProvider: string;
 	/** Cold outreach (separate sender domain / reputation). */
 	cold?: boolean;
-	/** Audience size for the consequence line; defaults to 1. */
+	/**
+	 * Audience size for the consequence line; defaults to 1.
+	 * Kept for display (e.g. "388 recipients"); use `recipientsList` for the actual
+	 * per-recipient send list on direct-email channels.
+	 */
 	recipients?: number;
+	/**
+	 * Actual recipient list for direct-email channels (smtp, resend).
+	 * Adapters iterate this for per-recipient sends + partial-success tracking (DEC-9).
+	 * Broadcast channels (listmonk, buffer) address a list/channel audience and
+	 * ignore this field.
+	 */
+	recipientsList?: { name?: string; email: string }[];
+	/**
+	 * Body content type — adapters set the MIME part accordingly.
+	 * Defaults to `'text'` when absent.
+	 */
+	bodyFormat?: 'html' | 'text';
+	/** Reply-To header for direct-email channels (smtp, resend). */
+	replyTo?: string;
 	/** Machine schedule time (ISO) for overdue/today bucketing; null = unscheduled. */
 	scheduledIso: string | null;
 	/** Row time display, e.g. "scheduled 17:00" / "today" / "2d late". */
@@ -70,6 +88,28 @@ export interface DraftItem {
 	threadCount?: string;
 	/** Explicit section bucket; otherwise derived from `scheduledIso`. */
 	section?: string;
+}
+
+/**
+ * Partial-success result returned by a `ChannelAdapter.send()` call (DEC-9).
+ * `ok` is true when at least one recipient was accepted; `failed` lists
+ * per-recipient errors so callers can surface them without dropping success.
+ * Shared here so the contract module is the single SoT; the daemon's
+ * `lib/channels/types.ts` imports it directly from `@ikenga/contract`.
+ */
+export interface SendResult {
+	/** False only when ALL recipients failed (or a batch-level error occurred). */
+	ok: boolean;
+	/** Provider message/campaign/post id — write around the network call where supported (G-05). */
+	externalId?: string;
+	/** Addresses the provider accepted (partial success — DEC-9). */
+	sent?: string[];
+	/** Per-recipient failures for partial-success scenarios. */
+	failed?: { email: string; error: string }[];
+	/** Batch-level error message (to error_text column) when ok is false. */
+	error?: string;
+	/** True for transient errors (5xx/429/network) — drives in-worker retry vs permanent fail. */
+	retryable?: boolean;
 }
 
 /** Batch-level metadata for one approve-mode run (the gate header + undo window). */
@@ -104,7 +144,11 @@ export interface PausedDraft {
 	agent: string;
 	senderAddress: string;
 	cold: boolean;
-	status: 'awaiting' | 'edited' | 'overdue';
+	/**
+	 * Panel display status. `'failed'` means the send worker exhausted retries
+	 * and the draft needs operator attention (see `errorMessage` / `attempts`).
+	 */
+	status: 'awaiting' | 'edited' | 'overdue' | 'failed';
 	scheduledAt: string;
 	scheduledLabel: string;
 	timeVariant: 'is-today' | 'is-overdue' | null;
@@ -123,6 +167,10 @@ export interface PausedDraft {
 		time: string;
 		undoMs: number;
 	};
+	/** Last error surfaced by the send worker (from pa_action_drafts.error_text). */
+	errorMessage?: string;
+	/** Number of send attempts so far (from pa_action_drafts.attempts). */
+	attempts?: number;
 }
 
 const PREVIEW_MAX = 160;
@@ -148,6 +196,10 @@ function sameLocalDay(a: number, b: number): boolean {
  * Derive the panel's `PausedDraft` from a producer `DraftItem` + the batch
  * `ApproveGateMeta`. `now` is injectable for deterministic tests; it only affects
  * time bucketing (overdue / today / section). Pure + side-effect-free.
+ *
+ * `errorMessage` and `attempts` are not derivable from a `DraftItem` (they live
+ * on the DB row after worker runs); callers that reconstruct a `PausedDraft` from
+ * a stored row should set them on the returned object directly.
  */
 export function fromDraftItem(
 	item: DraftItem,
