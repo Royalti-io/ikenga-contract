@@ -13,7 +13,10 @@ import { EngineProvidesSchema } from './engine/index.js';
 
 // v2 (WP-05): added capabilities.sqlite + permissions["sqlite.tables"];
 // permissions["supabase.tables"] kept as a compat alias for api=1 manifests.
-export const IKENGA_API_VERSION = 2 as const;
+// v3 (ADR-017): added capabilities.http / .secrets / .invoke (trusted-cap tier)
+// + top-level optional `signature`. All additive; api=1/2 manifests parse
+// unchanged. Elevated caps are inert unless the pkg is trusted.
+export const IKENGA_API_VERSION = 3 as const;
 export const IKENGA_API_MIN_SUPPORTED = 1 as const;
 
 // ---------- Sub-schemas ----------
@@ -183,6 +186,54 @@ export type WebviewCapability = z.infer<typeof WebviewCapabilitySchema>;
 export const AgentOpsCapabilitySchema = z.object({});
 export type AgentOpsCapability = z.infer<typeof AgentOpsCapabilitySchema>;
 
+/** host.fetch capability (ADR-017, TRUSTED-only). Host-mediated HTTP proxy;
+ *  the shell makes the request and attaches auth from Stronghold — the key
+ *  never enters the iframe. URL allowlist = `permissions.net`. Mirrors
+ *  `HttpCapability` in `shell/src-tauri/src/pkg/manifest.rs`. */
+export const HttpCapabilitySchema = z
+  .object({
+    /** Name of a `capabilities.secrets` declaration whose resolved value the
+     *  shell attaches as the auth header. Omit = unauthenticated proxy. */
+    auth_secret: z.string().optional(),
+    /** Header name for the auth secret. Default "Authorization". */
+    auth_header: z.string().default('Authorization'),
+  })
+  .strict();
+export type HttpCapability = z.infer<typeof HttpCapabilitySchema>;
+
+/** One named-secret declaration. `vault_key` is resolved host-side and never
+ *  reaches the iframe; the iframe sees only `hostContext.secrets[name]`.
+ *  Mirrors `NamedSecret` in `shell/src-tauri/src/pkg/manifest.rs`. */
+export const NamedSecretSchema = z
+  .object({
+    name: z.string(),
+    /** Vault key (must be within permissions["vault.keys"]). Host-only. */
+    vault_key: z.string(),
+    /** When true, mount fails if the key is missing (Supabase `required`). */
+    required: z.boolean().default(false),
+    /** Optional value-format hint: "jwt" | "bearer" | "raw". String, not enum. */
+    format: z.string().optional(),
+  })
+  .strict();
+export type NamedSecret = z.infer<typeof NamedSecretSchema>;
+
+/** Named-secret injection capability (ADR-017, TRUSTED-only). Generalizes the
+ *  Supabase hostContext handshake. Mirrors `SecretsCapability` in
+ *  `shell/src-tauri/src/pkg/manifest.rs`. */
+export const SecretsCapabilitySchema = z
+  .object({
+    declarations: z.array(NamedSecretSchema).default([]),
+  })
+  .strict();
+export type SecretsCapability = z.infer<typeof SecretsCapabilitySchema>;
+
+/** Scoped Tauri invoke passthrough (ADR-017, TRUSTED-only). Presence gates
+ *  `host.invoke`; the command allowlist is permissions["shell.execute"].
+ *  Empty object — presence is the gate (mirrors `AgentOpsCapabilitySchema`).
+ *  Mirrors `InvokeCapability` in `shell/src-tauri/src/pkg/manifest.rs`. */
+export const InvokeCapabilitySchema = z.object({});
+export type InvokeCapability = z.infer<typeof InvokeCapabilitySchema>;
+
 export const WindowBlockSchema = z.object({
   label: z.string(),
   url: z.string(),
@@ -283,6 +334,12 @@ export const ManifestSchema = z.object({
     sqlite: SqliteCapabilitySchema.optional(),
     webview: WebviewCapabilitySchema.optional(),
     agentOps: AgentOpsCapabilitySchema.optional(),
+    /** host.fetch proxy (ADR-017). Inert unless the pkg is trusted. */
+    http: HttpCapabilitySchema.optional(),
+    /** Named-secret injection (ADR-017). Inert unless trusted. */
+    secrets: SecretsCapabilitySchema.optional(),
+    /** host.invoke passthrough (ADR-017). Inert unless trusted. */
+    invoke: InvokeCapabilitySchema.optional(),
   }).optional(),
 
   /**
@@ -310,6 +367,13 @@ export const ManifestSchema = z.object({
    * (`pkg/manifest.rs`) — keep in lockstep (`deny_unknown_fields`).
    */
   requires: z.array(RequiresEntrySchema).default([]),
+
+  /** Optional ed25519 signature over the normalized manifest JSON (sort keys,
+   *  strip `signature` before signing). Format `"ed25519:<base64>"`. Present
+   *  on notarized registry pkgs; verified at install against the publisher key
+   *  the signed registry index named. Absent → pkg isn't trusted (no elevated
+   *  caps). Mirrors `signature: Option<String>` on the Rust `Manifest`. */
+  signature: z.string().optional(),
 });
 
 export type Manifest = z.infer<typeof ManifestSchema>;
