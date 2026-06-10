@@ -2,9 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  HttpCapabilitySchema,
+  IKENGA_API_VERSION,
+  InvokeCapabilitySchema,
   ManifestSchema,
+  NamedSecretSchema,
   RequiresEntrySchema,
   RequireSourceSchema,
+  SecretsCapabilitySchema,
 } from './manifest.js';
 
 // ─── WP-11 — `requires` field (ADR-015 §3) ──────────────────────────────────
@@ -80,6 +85,96 @@ test('Manifest: requires parses and round-trips', () => {
 test('Manifest: requires defaults to [] when absent (pre-Phase-4 manifest)', () => {
   const m = ManifestSchema.parse({ ...BASE });
   assert.deepEqual(m.requires, []);
+});
+
+// ─── WP-01 — trusted-cap tier (ADR-017): http / secrets / invoke + signature ─
+
+test('IKENGA_API_VERSION is 3 (ADR-017 soft bump)', () => {
+  assert.equal(IKENGA_API_VERSION, 3);
+});
+
+test('HttpCapability: auth_header defaults to Authorization; auth_secret optional', () => {
+  const h = HttpCapabilitySchema.parse({});
+  assert.equal(h.auth_header, 'Authorization');
+  assert.equal(h.auth_secret, undefined);
+});
+
+test('HttpCapability: .strict rejects unknown field (mirrors Rust deny_unknown_fields)', () => {
+  assert.throws(() => HttpCapabilitySchema.parse({ bogus: true }));
+});
+
+test('NamedSecret: full shape parses; required defaults false', () => {
+  const s = NamedSecretSchema.parse({ name: 'twenty', vault_key: 'TWENTY_API_KEY' });
+  assert.equal(s.required, false);
+  const r = NamedSecretSchema.parse({
+    name: 'k',
+    vault_key: 'K',
+    required: true,
+    format: 'bearer',
+  });
+  assert.equal(r.required, true);
+  assert.equal(r.format, 'bearer');
+});
+
+test('NamedSecret: .strict rejects unknown field', () => {
+  assert.throws(() =>
+    NamedSecretSchema.parse({ name: 'k', vault_key: 'K', bogus: true }),
+  );
+});
+
+test('SecretsCapability: declarations default to []', () => {
+  const s = SecretsCapabilitySchema.parse({});
+  assert.deepEqual(s.declarations, []);
+});
+
+test('InvokeCapability: empty object parses; commands defaults to [] (presence gate)', () => {
+  assert.deepEqual(InvokeCapabilitySchema.parse({}), { commands: [] });
+});
+
+test('InvokeCapability (D-06): commands allowlist parses + survives', () => {
+  const i = InvokeCapabilitySchema.parse({ commands: ['pa_actions_commit', 'pa_actions_reject'] });
+  assert.deepEqual(i.commands, ['pa_actions_commit', 'pa_actions_reject']);
+});
+
+test('InvokeCapability: .strict rejects unknown field (mirrors Rust deny_unknown_fields)', () => {
+  assert.throws(() => InvokeCapabilitySchema.parse({ commands: [], bogus: true }));
+});
+
+test('Manifest: fully-populated trusted-cap manifest round-trips (G-MANIFEST DoD)', () => {
+  // The contract-side half of the round-trip parse-fixture: a manifest carrying
+  // ALL FOUR new fields — top-level `signature`, `capabilities.http` (with
+  // auth_secret + custom header), `capabilities.secrets` (with a declaration),
+  // and the presence-gate `capabilities.invoke` — parses and the values survive.
+  const m = ManifestSchema.parse({
+    ...BASE,
+    ikenga_api: '3',
+    signature: 'ed25519:Zm9vYmFyYmF6',
+    permissions: { net: ['https://api.twenty.com/'], 'vault.keys': ['TWENTY_API_KEY'] },
+    capabilities: {
+      http: { auth_secret: 'twenty', auth_header: 'X-Api-Key' },
+      secrets: {
+        declarations: [
+          { name: 'twenty', vault_key: 'TWENTY_API_KEY', required: true, format: 'bearer' },
+        ],
+      },
+      invoke: { commands: ['pa_actions_commit'] },
+    },
+  });
+  assert.equal(m.signature, 'ed25519:Zm9vYmFyYmF6');
+  assert.equal(m.capabilities?.http?.auth_secret, 'twenty');
+  assert.equal(m.capabilities?.http?.auth_header, 'X-Api-Key');
+  assert.equal(m.capabilities?.secrets?.declarations.length, 1);
+  assert.equal(m.capabilities?.secrets?.declarations[0].vault_key, 'TWENTY_API_KEY');
+  assert.equal(m.capabilities?.secrets?.declarations[0].required, true);
+  assert.ok(m.capabilities?.invoke !== undefined);
+  // D-06: the invoke command allowlist survives the round-trip.
+  assert.deepEqual(m.capabilities?.invoke?.commands, ['pa_actions_commit']);
+});
+
+test('Manifest: api=1 manifest without new fields parses (back-compat)', () => {
+  const m = ManifestSchema.parse({ ...BASE });
+  assert.equal(m.signature, undefined);
+  assert.equal(m.capabilities, undefined);
 });
 
 test('Manifest: retired bundling fields are no longer part of the type (WP-17)', () => {
