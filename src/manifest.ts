@@ -228,10 +228,21 @@ export const SecretsCapabilitySchema = z
 export type SecretsCapability = z.infer<typeof SecretsCapabilitySchema>;
 
 /** Scoped Tauri invoke passthrough (ADR-017, TRUSTED-only). Presence gates
- *  `host.invoke`; the command allowlist is permissions["shell.execute"].
- *  Empty object — presence is the gate (mirrors `AgentOpsCapabilitySchema`).
+ *  `host.invoke`; `commands` is the named-command allowlist matched (glob) by
+ *  `permissions_check::check_shell_execute` against the `host.invoke` command.
+ *
+ *  D-06: the allowlist is `invoke`'s OWN field, NOT `permissions["shell.execute"]`.
+ *  Reusing `shell.execute` would trip `requires_trust` → the pkg only ever reaches
+ *  user-`Granted`, never `AutoTrusted`, so `is_trusted_for_elevated()` is false and
+ *  `host.invoke` would always deny. Keeping the allowlist here lets a signed/builtin
+ *  pkg declare invokable commands while leaving `shell.execute` empty → AutoTrusted →
+ *  elevated. POLICY: named commands only, never `*` (not a general shell).
  *  Mirrors `InvokeCapability` in `shell/src-tauri/src/pkg/manifest.rs`. */
-export const InvokeCapabilitySchema = z.object({});
+export const InvokeCapabilitySchema = z
+  .object({
+    commands: z.array(z.string()).default([]),
+  })
+  .strict();
 export type InvokeCapability = z.infer<typeof InvokeCapabilitySchema>;
 
 export const WindowBlockSchema = z.object({

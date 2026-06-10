@@ -127,8 +127,17 @@ test('SecretsCapability: declarations default to []', () => {
   assert.deepEqual(s.declarations, []);
 });
 
-test('InvokeCapability: empty object parses (presence gate)', () => {
-  assert.deepEqual(InvokeCapabilitySchema.parse({}), {});
+test('InvokeCapability: empty object parses; commands defaults to [] (presence gate)', () => {
+  assert.deepEqual(InvokeCapabilitySchema.parse({}), { commands: [] });
+});
+
+test('InvokeCapability (D-06): commands allowlist parses + survives', () => {
+  const i = InvokeCapabilitySchema.parse({ commands: ['pa_actions_commit', 'pa_actions_reject'] });
+  assert.deepEqual(i.commands, ['pa_actions_commit', 'pa_actions_reject']);
+});
+
+test('InvokeCapability: .strict rejects unknown field (mirrors Rust deny_unknown_fields)', () => {
+  assert.throws(() => InvokeCapabilitySchema.parse({ commands: [], bogus: true }));
 });
 
 test('Manifest: fully-populated trusted-cap manifest round-trips (G-MANIFEST DoD)', () => {
@@ -148,7 +157,7 @@ test('Manifest: fully-populated trusted-cap manifest round-trips (G-MANIFEST DoD
           { name: 'twenty', vault_key: 'TWENTY_API_KEY', required: true, format: 'bearer' },
         ],
       },
-      invoke: {},
+      invoke: { commands: ['pa_actions_commit'] },
     },
   });
   assert.equal(m.signature, 'ed25519:Zm9vYmFyYmF6');
@@ -158,6 +167,8 @@ test('Manifest: fully-populated trusted-cap manifest round-trips (G-MANIFEST DoD
   assert.equal(m.capabilities?.secrets?.declarations[0].vault_key, 'TWENTY_API_KEY');
   assert.equal(m.capabilities?.secrets?.declarations[0].required, true);
   assert.ok(m.capabilities?.invoke !== undefined);
+  // D-06: the invoke command allowlist survives the round-trip.
+  assert.deepEqual(m.capabilities?.invoke?.commands, ['pa_actions_commit']);
 });
 
 test('Manifest: api=1 manifest without new fields parses (back-compat)', () => {
