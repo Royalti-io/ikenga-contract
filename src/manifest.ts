@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { EngineProvidesSchema } from './engine/index.js';
+import { BrowserEngineSchema } from './browser.js';
 
 // v2 (WP-05): added capabilities.sqlite + permissions["sqlite.tables"];
 // permissions["supabase.tables"] kept as a compat alias for api=1 manifests.
@@ -173,6 +174,11 @@ export const WebviewCapabilitySchema = z.object({
   child_webviews: z.boolean().default(false),
   /** Named cookie/data partitions; empty = the implicit "default" partition. */
   partitions: z.array(z.string()).default([]),
+  /** Browser engines this pkg may open panes with. `"webkit"` is the in-shell
+   *  child-webview; `"chrome"` is Managed mode (installed Chrome over CDP, its
+   *  own OS window). Defaults to `["webkit"]` so existing manifests are
+   *  unchanged. Mirrors `engines` in `WebviewCapability` (manifest.rs). */
+  engines: z.array(BrowserEngineSchema).default(['webkit']),
 });
 export type WebviewCapability = z.infer<typeof WebviewCapabilitySchema>;
 
