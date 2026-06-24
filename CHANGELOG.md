@@ -1,5 +1,11 @@
 # @ikenga/contract
 
+## 0.11.0
+
+### Minor Changes
+
+- 63f35d7: Add a `BrowserEngine` discriminant (`"webkit" | "chrome"`) to the browser surface for Managed-mode Chrome. `BrowserOpenInput`, `BrowserOpenResult`, and `BrowserListEntry` gain an `engine` field (defaults to `"webkit"`), and `WebviewCapability` gains an `engines` array (defaults to `["webkit"]`). Purely additive — existing manifests and callers are unchanged. Mirrors the lockstep change in `WebviewCapability` (shell `manifest.rs`).
+
 ## 0.10.0
 
 ### Minor Changes
