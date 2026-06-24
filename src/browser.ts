@@ -43,6 +43,21 @@ export const BrowserRefSchema = z
 
 export type BrowserRef = z.infer<typeof BrowserRefSchema>;
 
+// ---------- Engine ----------
+//
+// Which underlying browser engine backs a pane. `webkit` (default) is the
+// in-shell child-webview (WebKitGTK on Linux / WKWebView / WebView2). `chrome`
+// is "Managed mode": the shell launches the user's installed Google Chrome with
+// a dedicated `--user-data-dir` + `--remote-debugging-port` and drives it over
+// CDP. The engine is chosen at `open()`; subsequent actions address the pane by
+// id and inherit its engine. See plans/chrome-pkg/01-plan.md §Architecture.
+
+export const BROWSER_ENGINES = ['webkit', 'chrome'] as const;
+
+export const BrowserEngineSchema = z.enum(BROWSER_ENGINES);
+
+export type BrowserEngine = z.infer<typeof BrowserEngineSchema>;
+
 // ---------- Snapshot ----------
 //
 // Mirrors the shape of Iyke's `DomResult` so models can move between the
@@ -119,8 +134,17 @@ export const BrowserOpenInputSchema = z
      * Optional initial rect in main-window-client coordinates. Omitted when
      * the FE owns layout (the kernel will refuse without a rect; the MCP
      * layer is expected to supply a sane default if the caller didn't).
+     *
+     * Ignored for `engine: "chrome"` — Managed Chrome renders in its own OS
+     * window, not a shell pane.
      */
     rect: RectSchema.optional(),
+    /**
+     * Which engine backs this pane. Defaults to `"webkit"` (the in-shell
+     * child-webview). `"chrome"` is Managed mode (installed Chrome over CDP).
+     * The pkg must declare the engine in `capabilities.webview.engines`.
+     */
+    engine: BrowserEngineSchema.default('webkit'),
   })
   .refine((v) => !(v.partition && v.session), {
     message: 'pass at most one of `partition` / `session`',
@@ -132,6 +156,8 @@ export const BrowserOpenResultSchema = z.object({
   id: BrowserPaneIdSchema,
   url: z.string(),
   partition: z.string(),
+  /** The resolved engine backing this pane. */
+  engine: BrowserEngineSchema,
 });
 
 export type BrowserOpenResult = z.infer<typeof BrowserOpenResultSchema>;
@@ -147,6 +173,8 @@ export const BrowserListEntrySchema = z.object({
   url: z.string(),
   partition: z.string(),
   focused: z.boolean(),
+  /** Which engine backs this pane (`"webkit"` if absent, for back-compat). */
+  engine: BrowserEngineSchema.default('webkit'),
 });
 
 export type BrowserListEntry = z.infer<typeof BrowserListEntrySchema>;
