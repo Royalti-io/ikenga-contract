@@ -156,8 +156,8 @@ export const BrowserOpenResultSchema = z.object({
   id: BrowserPaneIdSchema,
   url: z.string(),
   partition: z.string(),
-  /** The resolved engine backing this pane. */
-  engine: BrowserEngineSchema,
+  /** The resolved engine backing this pane (`"webkit"` if absent, for back-compat). */
+  engine: BrowserEngineSchema.default('webkit'),
 });
 
 export type BrowserOpenResult = z.infer<typeof BrowserOpenResultSchema>;
