@@ -8,6 +8,7 @@ export * from './artifact.js';
 export * from './registry.js';
 export * from './browser.js';
 export * from './pa-actions.js';
+export * from './window.js';
 
 /** This package's own version. */
 export const CONTRACT_PACKAGE_VERSION = '0.5.0' as const;
