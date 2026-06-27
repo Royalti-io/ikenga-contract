@@ -36,6 +36,27 @@ export interface DraftSequence {
 	recipients: number;
 }
 
+/** One sub-post in an X/Twitter thread (X allows ≤4 images per tweet). */
+export interface ThreadPost {
+	text: string;
+	/** Per-sub-post media URLs (X allows ≤4 images per tweet). */
+	imageUrls?: string[];
+}
+
+/**
+ * Media block carried on a Buffer DraftItem. `kind` selects the adapter path:
+ * - `'single'`   — 0–1 image attached to the post body.
+ * - `'carousel'` — 2–10 images (IG ≤10, LI ≤9); adapter uses multi-asset upload.
+ * - `'thread'`   — ordered sub-posts; adapter posts as N linked Buffer posts (≥2, ≤25).
+ */
+export interface SocialMedia {
+	kind: 'single' | 'carousel' | 'thread';
+	/** single = 0–1 image URL; carousel = 2–10 (platform-dependent). */
+	imageUrls?: string[];
+	/** thread-kind only: ordered sub-posts (≥2, ≤25). */
+	thread?: ThreadPost[];
+}
+
 /**
  * What an approve-aware action emits per draft — the lean, authoritative
  * producer shape. The shell derives the panel's `PausedDraft` from this via
@@ -88,6 +109,23 @@ export interface DraftItem {
 	threadCount?: string;
 	/** Explicit section bucket; otherwise derived from `scheduledIso`. */
 	section?: string;
+	// ── Buffer / social fields (mirror of payload_json media contract) ──────────
+	/**
+	 * Resolved Buffer channel id — company vs personal LinkedIn disambiguated at
+	 * enqueue time (not in the adapter). Only set for `channel: 'buffer'` drafts.
+	 */
+	channelId?: string;
+	/**
+	 * First comment text for hashtags / blog URL. Avoids Buffer link-preview
+	 * attachment errors on LinkedIn. Mapped to `metadata.<platform>.firstComment`.
+	 */
+	firstComment?: string;
+	/**
+	 * Social media block; selects single / carousel / thread adapter path.
+	 * Kept in lockstep with `payload.schema.ts` `SocialMedia` Zod schema and
+	 * the worker mirror in `scripts/cron/lib/channels/types.ts`.
+	 */
+	media?: SocialMedia;
 }
 
 /**
