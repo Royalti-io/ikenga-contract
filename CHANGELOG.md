@@ -1,5 +1,18 @@
 # @ikenga/contract
 
+## 0.12.0
+
+### Minor Changes
+
+- 0d67fd0: Add optional social/media fields to `DraftItem` (`channelId`, `firstComment`, `media`) plus `SocialMedia` and `ThreadPost` types, in lockstep with the send-worker's media-capable Buffer adapter (royalti-co social-outbound-unification). All fields are optional, so non-Buffer channels and existing consumers are unaffected.
+- fff5fec: Add the multi-window `G-WINDOW-MODEL` contract: a new `./window` export with Zod
+  schemas for `WindowDescriptor` (label / kind / surface_set / project_id /
+  layout_key) and the cross-window event envelope (`WindowEventEnvelope`,
+  `WindowEventTarget`, `WINDOW_TOPICS`, `WINDOW_TARGETED_CHANNELS`). Mirrors the
+  Rust structs in `royalti-io/ikenga` (`src-tauri/src/window/`) — round-trip tested
+  against shared canonical fixtures on both sides. Additive; no existing export
+  changes.
+
 ## 0.11.0
 
 ### Minor Changes
