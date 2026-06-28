@@ -55,6 +55,10 @@
     "./pa-actions": {
       "types": "./dist/pa-actions.d.ts",
       "import": "./dist/pa-actions.js"
+    },
+    "./window": {
+      "types": "./dist/window.d.ts",
+      "import": "./dist/window.js"
     }
   },
   "files": [
