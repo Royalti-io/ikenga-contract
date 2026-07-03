@@ -59,6 +59,10 @@
     "./window": {
       "types": "./dist/window.d.ts",
       "import": "./dist/window.js"
+    },
+    "./action-frontmatter": {
+      "types": "./dist/action-frontmatter.d.ts",
+      "import": "./dist/action-frontmatter.js"
     }
   },
   "files": [
@@ -97,7 +101,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "yaml": "^1.10.3"
   },
   "publishConfig": {
     "access": "public"
