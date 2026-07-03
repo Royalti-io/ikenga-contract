@@ -74,6 +74,11 @@ export const PermissionsSchema = z.object({
    *  without errors during the transition window. */
   'supabase.tables': z.array(z.string()).default([]),
   'vault.keys': z.array(z.string()).default([]),
+  /** Engine scopes exercisable from the pkg iframe. `"invoke"` gates the
+   *  FE-side host.sendToActiveSession / host.startChatSession verbs
+   *  (pkgDeclaresScope). Mirrors `Permissions.engine` in the shell's
+   *  manifest.rs — keep in lockstep. */
+  engine: z.array(z.string()).default([]),
 }).default({});
 
 export const NavEntrySchema = z.object({
