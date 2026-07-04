@@ -1,5 +1,23 @@
 # @ikenga/contract
 
+## 0.13.0
+
+### Minor Changes
+
+- 17375fd: Publish the skill-action frontmatter contract: a new `./action-frontmatter`
+  export with Zod schemas for `ActionFrontmatter` and its sub-schemas
+  (`DomainEnum`, `UxModeEnum`, `RunBinding`, `Trigger`, `CapabilityEnum`,
+  `SetupSpec`). This is the source-of-truth shape for an Atelier skill _action_'s
+  YAML frontmatter (the block between the leading `---` fences of an
+  `actions/*.md` file). Mirrors the Rust loader in `royalti-io/ikenga`
+  (`src-tauri/src/pkg/skill_actions.rs`) — same lockstep convention as
+  manifest.ts ↔ manifest.rs. Conformance-tested against every installed Atelier
+  action file. Additive; no existing export changes.
+- 4d7bc7d: PermissionsSchema gains `engine` (string[] of engine scopes, e.g. "invoke") —
+  previously undeclarable, so the shell's engine:invoke gate on
+  host.sendToActiveSession could never pass for any pkg. Mirrors the shell
+  manifest.rs Permissions.engine field (lockstep).
+
 ## 0.12.0
 
 ### Minor Changes
