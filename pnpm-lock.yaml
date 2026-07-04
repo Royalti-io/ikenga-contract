@@ -36,6 +36,9 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
+      yaml:
+        specifier: ^1.10.3
+        version: 1.10.3
 
 packages:
 
@@ -609,6 +612,10 @@ packages:
     engines: {node: '>= 8'}
     hasBin: true
 
+  yaml@1.10.3:
+    resolution: {integrity: sha512-vIYeF1u3CjlhAFekPPAk2h/Kv4T3mAkMox5OymRiJQB0spDP10LHvt+K7G9Ny6NuuMAb25/6n1qyUjAcGNf/AA==}
+    engines: {node: '>= 6'}
+
   zod-to-json-schema@3.25.2:
     resolution: {integrity: sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==}
     peerDependencies:
@@ -1172,6 +1179,8 @@ snapshots:
   which@2.0.2:
     dependencies:
       isexe: 2.0.0
+
+  yaml@1.10.3: {}
 
   zod-to-json-schema@3.25.2(zod@3.25.76):
     dependencies:
