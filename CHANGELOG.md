@@ -1,5 +1,11 @@
 # @ikenga/contract
 
+## 0.14.0
+
+### Minor Changes
+
+- f9e1b4f: Add `OperatorIdentity` hostContext extension (`operator` field on `IkengaHostContextExtensions`) — optional; absence means unknown operator and consumers must fail safe (e.g. `ux_mode: 'confirm'`).
+
 ## 0.13.0
 
 ### Minor Changes
