@@ -127,6 +127,7 @@ export const SettingsFieldSchema = z.object({
   label: z.string(),
   default: z.unknown().optional(),
   description: z.string().optional(),
+  env: z.string().optional(),
 });
 export const SettingsBlockSchema = z.object({
   schema: z.array(SettingsFieldSchema).default([]),
