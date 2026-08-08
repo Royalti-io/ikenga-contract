@@ -60,7 +60,7 @@ export interface McpServerSpec {
 /**
  * Capability flags every engine adapter advertises. This is the canonical
  * shape consumed by both the shell-side ChatAdapter layer and any pkg that
- * needs to reason about adapter features (wizard, settings UI, telemetry).
+ * needs to reason about adapter features (wizard, settings UI, sidecar health).
  *
  * Fields are intentionally a *superset* of what any single adapter
  * supports — an adapter sets the ones it implements to `true` and the
