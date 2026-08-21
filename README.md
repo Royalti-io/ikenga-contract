@@ -1,9 +1,9 @@
 # @ikenga/contract
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/Royalti-io/ikenga-contract/actions)
-[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/Royalti-io/ikenga-contract/releases)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/ikenga-hq/ikenga-contract/actions)
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/ikenga-hq/ikenga-contract/releases)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Discussions](https://img.shields.io/badge/community-discussions-5865F2.svg)](https://github.com/Royalti-io/ikenga-contract/discussions)
+[![Discussions](https://img.shields.io/badge/community-discussions-5865F2.svg)](https://github.com/ikenga-hq/ikenga-contract/discussions)
 
 > The single source of truth for how the Ikenga shell, pkgs, and engines talk to each
 > other.
@@ -11,7 +11,7 @@
 ## What it is
 
 `@ikenga/contract` is the shared TypeScript package that defines the wire between the
-[Ikenga shell](https://github.com/Royalti-io/ikenga), its packages, and its engine
+[Ikenga shell](https://github.com/ikenga-hq/ikenga), its packages, and its engine
 adapters: the manifest schema, the RPC envelope, the Engine interface, and the capability
 scope catalogue. It's intentionally small and stable — bumping its major version is an
 event coordinated across the shell and every published pkg.
@@ -55,7 +55,7 @@ install time.
 ## Source of truth
 
 The `Manifest` schema **mirrors** the Rust struct in
-[`Royalti-io/ikenga`](https://github.com/Royalti-io/ikenga) at
+[`ikenga-hq/ikenga`](https://github.com/ikenga-hq/ikenga) at
 `src-tauri/src/pkg/manifest.rs`. The Rust kernel parses pkg `manifest.json` files; this
 package is a TS-side validator and types-only mirror for tooling (CLI, registry build). To
 change the manifest, change the Rust struct first and update this schema in lockstep.
@@ -69,8 +69,8 @@ but unused by the kernel today; treat them as forward-looking.
 ## Links
 
 - [ikenga.dev](https://ikenga.dev) — site + docs
-- [`ikenga`](https://github.com/Royalti-io/ikenga) — the desktop shell (owns the Rust source of truth)
-- [`ikenga-pkgs`](https://github.com/Royalti-io/ikenga-pkgs) — first-party packages
+- [`ikenga`](https://github.com/ikenga-hq/ikenga) — the desktop shell (owns the Rust source of truth)
+- [`ikenga-pkgs`](https://github.com/ikenga-hq/ikenga-pkgs) — first-party packages
 
 ## License
 
@@ -79,5 +79,5 @@ Apache-2.0 — see [`LICENSE`](LICENSE).
 ## Contributing & community
 
 Issues and PRs welcome. Start a thread in
-[Discussions](https://github.com/Royalti-io/ikenga-contract/discussions).
+[Discussions](https://github.com/ikenga-hq/ikenga-contract/discussions).
 <!-- VERIFY: link CONTRIBUTING.md / CODE_OF_CONDUCT.md once the org .github defaults or per-repo copies exist. -->

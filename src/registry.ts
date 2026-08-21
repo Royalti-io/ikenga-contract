@@ -1,5 +1,5 @@
 // Ikenga registry schema — the static JSON catalog served by
-// `Royalti-io/ikenga-registry` over GitHub Pages.
+// `ikenga-hq/ikenga-registry` over GitHub Pages.
 //
 // Shape: a small root `index.json` lists every pkg with its latest version
 // and a pointer to a per-pkg detail file (`pkgs/<short-name>.json`).

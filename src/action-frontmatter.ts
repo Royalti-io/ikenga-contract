@@ -2,7 +2,7 @@
 // Atelier skill *action*'s YAML frontmatter (the block between the leading
 // `---` fences of an `actions/*.md` file).
 //
-// The Rust loader in `royalti-io/ikenga` at
+// The Rust loader in `ikenga-hq/ikenga` at
 // `src-tauri/src/pkg/skill_actions.rs` mirrors this schema. Field changes MUST
 // be made in lockstep with that Rust struct — same convention as
 // manifest.ts ↔ manifest.rs.
