@@ -1,5 +1,5 @@
 // Multi-window contract — mirrors the Rust source-of-truth in
-// `royalti-io/ikenga` at `src-tauri/src/window/{descriptor,events}.rs`.
+// `ikenga-hq/ikenga` at `src-tauri/src/window/{descriptor,events}.rs`.
 //
 // This is the `G-WINDOW-MODEL` freeze-gate output (plans/multi-window WP-02).
 // It has TWO co-equal halves: the `WindowDescriptor` (what a window IS) and the

@@ -1,5 +1,5 @@
 // Ikenga pkg manifest schema — mirrors the Rust schema in
-// `royalti-io/ikenga` at `src-tauri/src/pkg/manifest.rs`.
+// `ikenga-hq/ikenga` at `src-tauri/src/pkg/manifest.rs`.
 //
 // Source of truth is the Rust struct. This zod schema is used by the CLI,
 // registry, and tooling for client-side parse + validation. Field changes

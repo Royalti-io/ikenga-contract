@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Royalti-io/ikenga-contract.git"
+    "url": "git+https://github.com/ikenga-hq/ikenga-contract.git"
   },
   "type": "module",
   "main": "./dist/index.js",
