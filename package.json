@@ -67,6 +67,10 @@
     "./host-context": {
       "types": "./dist/host-context.d.ts",
       "import": "./dist/host-context.js"
+    },
+    "./app-bridge": {
+      "types": "./dist/app-bridge.d.ts",
+      "import": "./dist/app-bridge.js"
     }
   },
   "files": [
