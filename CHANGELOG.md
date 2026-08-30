@@ -1,5 +1,11 @@
 # @ikenga/contract
 
+## 0.16.0
+
+### Minor Changes
+
+- 9103d28: feat(manifest): v4 — session, events, auth_bridge, route partition, allowed_origins (#27)
+
 ## 0.15.0
 
 ### Minor Changes
