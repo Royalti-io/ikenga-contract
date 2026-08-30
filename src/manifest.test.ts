@@ -89,8 +89,8 @@ test('Manifest: requires defaults to [] when absent (pre-Phase-4 manifest)', () 
 
 // ─── WP-01 — trusted-cap tier (ADR-017): http / secrets / invoke + signature ─
 
-test('IKENGA_API_VERSION is 3 (ADR-017 soft bump)', () => {
-  assert.equal(IKENGA_API_VERSION, 3);
+test('IKENGA_API_VERSION is 4 (WP-01 Manifest v4)', () => {
+  assert.equal(IKENGA_API_VERSION, 4);
 });
 
 test('HttpCapability: auth_header defaults to Authorization; auth_secret optional', () => {
@@ -177,6 +177,26 @@ test('Manifest: api=1 manifest without new fields parses (back-compat)', () => {
   assert.equal(m.capabilities, undefined);
 });
 
+test('Manifest: webview capability and partition route parses', () => {
+  const m = ManifestSchema.parse({
+    ...BASE,
+    ui: {
+      routes: [
+        { path: '/test', kind: 'webview', source: 'https://example.com', partition: 'test-part' }
+      ]
+    },
+    capabilities: {
+      webview: {
+        child_webviews: true,
+        allowed_origins: ['https://example.com']
+      }
+    }
+  });
+  assert.equal(m.ui.routes[0].kind, 'webview');
+  assert.equal(m.ui.routes[0].partition, 'test-part');
+  assert.deepEqual(m.capabilities?.webview?.allowed_origins, ['https://example.com']);
+});
+
 test('Manifest: retired bundling fields are no longer part of the type (WP-17)', () => {
   // ADR-015 decision 4: `skills`/`commands`/`agents` were hard-retired from the
   // schema (lockstep with the Rust `deny_unknown_fields` Manifest, which REJECTS
@@ -189,4 +209,32 @@ test('Manifest: retired bundling fields are no longer part of the type (WP-17)',
   >;
   assert.equal(m.skills, undefined);
   assert.equal(m.commands, undefined);
+});
+
+test('Manifest: allowed_origins absent stays absent (not coerced to [])', () => {
+  // G-28 — absent must be distinguishable from an explicit deny-all lockdown.
+  // A `.default([])` here would silently turn every pre-v4 manifest into one.
+  const m = ManifestSchema.parse({
+    id: 'com.test.webview',
+    name: 'T',
+    version: '1.0.0',
+    ikenga_api: '4',
+    author: { name: 'T' },
+    ui: { routes: [{ path: '/', kind: 'webview', source: 'https://example.com' }] },
+    capabilities: { webview: { child_webviews: true, partitions: ['default'] } },
+  });
+  assert.equal(m.capabilities?.webview?.allowed_origins, undefined);
+});
+
+test('Manifest: allowed_origins empty array survives as an explicit lockdown', () => {
+  const m = ManifestSchema.parse({
+    id: 'com.test.webview',
+    name: 'T',
+    version: '1.0.0',
+    ikenga_api: '4',
+    author: { name: 'T' },
+    ui: { routes: [{ path: '/', kind: 'webview', source: 'https://example.com' }] },
+    capabilities: { webview: { child_webviews: true, partitions: ['default'], allowed_origins: [] } },
+  });
+  assert.deepEqual(m.capabilities?.webview?.allowed_origins, []);
 });

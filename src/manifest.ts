@@ -17,7 +17,7 @@ import { BrowserEngineSchema } from './browser.js';
 // v3 (ADR-017): added capabilities.http / .secrets / .invoke (trusted-cap tier)
 // + top-level optional `signature`. All additive; api=1/2 manifests parse
 // unchanged. Elevated caps are inert unless the pkg is trusted.
-export const IKENGA_API_VERSION = 3 as const;
+export const IKENGA_API_VERSION = 4 as const;
 export const IKENGA_API_MIN_SUPPORTED = 1 as const;
 
 // ---------- Sub-schemas ----------
@@ -79,6 +79,7 @@ export const PermissionsSchema = z.object({
    *  (pkgDeclaresScope). Mirrors `Permissions.engine` in the shell's
    *  manifest.rs — keep in lockstep. */
   engine: z.array(z.string()).default([]),
+  events: z.array(z.string()).default([]),
 }).default({});
 
 export const NavEntrySchema = z.object({
@@ -91,10 +92,11 @@ export const NavEntrySchema = z.object({
 
 export const UiRouteSchema = z.object({
   path: z.string(),
-  /** "iframe" | "component" (component is builtin-only) */
-  kind: z.enum(['iframe', 'component']),
-  /** iframe: URL or pkg-relative html path. component: identifier. */
+  /** "iframe" | "component" | "webview" (component is builtin-only) */
+  kind: z.enum(['iframe', 'component', 'webview']),
+  /** iframe/webview: URL or pkg-relative html path. component: identifier. */
   source: z.string(),
+  partition: z.string().optional(),
 });
 
 export const CommandPaletteEntrySchema = z.object({
@@ -110,6 +112,11 @@ export const SidePaneViewerSchema = z.object({
   route: z.string(),
 });
 
+export const ManifestUiSessionSchema = z.object({
+  persistence: z.enum(['keep', 'clear-on-exit', 'ask']),
+});
+export type ManifestUiSession = z.infer<typeof ManifestUiSessionSchema>;
+
 export const UiBlockSchema = z.object({
   nav: z.array(NavEntrySchema).default([]),
   routes: z.array(UiRouteSchema).default([]),
@@ -119,6 +126,7 @@ export const UiBlockSchema = z.object({
   csp: z.record(z.array(z.string())).optional(),
   /** Per-directive Permission-Policy values. */
   permissions: z.record(z.array(z.string())).optional(),
+  session: ManifestUiSessionSchema.optional(),
 }).default({});
 
 export const SettingsFieldSchema = z.object({
@@ -185,6 +193,13 @@ export const WebviewCapabilitySchema = z.object({
    *  own OS window). Defaults to `["webkit"]` so existing manifests are
    *  unchanged. Mirrors `engines` in `WebviewCapability` (manifest.rs). */
   engines: z.array(BrowserEngineSchema).default(['webkit']),
+  /** Origins this pkg's webviews may load. **Absent is permissive** (with a
+   *  host-side warning) so pre-v4 manifests keep mounting; `[]` is an explicit
+   *  deny-all; entries match exactly, as `*`, or as a `https://*.example.com`
+   *  subdomain glob. Mirrors `allowed_origins` in `manifest.rs` — absent and
+   *  empty are deliberately distinct, so this must stay `.optional()`, never
+   *  `.default([])`. */
+  allowed_origins: z.array(z.string()).optional(),
 });
 export type WebviewCapability = z.infer<typeof WebviewCapabilitySchema>;
 
@@ -314,6 +329,11 @@ export const RequiresEntrySchema = z
   .strict();
 export type RequiresEntry = z.infer<typeof RequiresEntrySchema>;
 
+export const ManifestAuthBridgeSchema = z.object({
+  strategy: z.enum(['api-key', 'cdp', 'none']),
+});
+export type ManifestAuthBridge = z.infer<typeof ManifestAuthBridgeSchema>;
+
 // ---------- Manifest ----------
 
 export const ManifestSchema = z.object({
@@ -323,6 +343,8 @@ export const ManifestSchema = z.object({
   version: z.string(),
   /** Numeric string — host accepts versions in [MIN, CURRENT]. */
   ikenga_api: z.string().regex(/^\d+$/),
+
+  auth_bridge: ManifestAuthBridgeSchema.optional(),
 
   /** Hint, not enforced: "skill" | "embedded" | "windowed" | "engine". */
   kind: z.string().optional(),
