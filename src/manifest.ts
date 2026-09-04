@@ -79,6 +79,12 @@ export const PermissionsSchema = z.object({
    *  (pkgDeclaresScope). Mirrors `Permissions.engine` in the shell's
    *  manifest.rs — keep in lockstep. */
   engine: z.array(z.string()).default([]),
+  /** Notification scopes. `"send"` gates the FE-side `host.notify` verb
+   *  (pkgDeclaresScope), which raises a real OS notification and therefore
+   *  reaches the user even when Ikenga is not the focused window — which is
+   *  why it is gated at all. Mirrors `Permissions.notify` in the shell's
+   *  manifest.rs — keep in lockstep. */
+  notify: z.array(z.string()).default([]),
   events: z.array(z.string()).default([]),
 }).default({});
 
